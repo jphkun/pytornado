@@ -7,7 +7,6 @@
 # -- Path setup --------------------------------------------------------------
 import os
 import sys
-import re
 
 from pytornado.__version__ import __version__
 
@@ -40,9 +39,7 @@ version = __version__
 # ######### AUTOMATE THINGS ##########
 # ====================================
 os.system('bash ./dev_doc/gen_auto_doc.sh')
-os.system('bash ./_gen_help_page.sh')
-os.system('bash ./user_guide/make_template.sh clean')
-os.system('bash ./user_guide/make_template.sh make')
+os.system('python ./api/gen_model_doc.py')
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -52,6 +49,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     # 'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
+    'sphinxcontrib.mermaid',
 ]
 
 # Paths that contain templates here, relative to this directory.

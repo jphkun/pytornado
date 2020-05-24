@@ -45,10 +45,15 @@ class S:
 # =================
 mspec = ModelSpec()
 
+fspec = FeatureSpec()
+fspec.add_prop_spec('segment_vertices', {'type': dict}, singleton=False, required=True, doc="Add a wing segment")
+mspec.add_feature_spec('wing', fspec, singleton=False, required=True, doc="Add a wing")
+
 # ===================
 # ===== RESULTS =====
 # ===================
 rspec = ModelSpec()
+mspec.results = rspec
 
 
 # ===== MODEL =====

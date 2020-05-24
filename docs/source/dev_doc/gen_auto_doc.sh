@@ -4,4 +4,4 @@
 
 cd $(dirname $0)
 
-sphinx-apidoc -f -o . ../../../src/lib/pytornado/
+sphinx-apidoc -f -o . ../../../src/pytornado/
