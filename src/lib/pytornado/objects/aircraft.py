@@ -52,8 +52,8 @@ import os
 import numpy as np
 from commonlibs.math.vectors import get_plane_line_intersect
 from airfoils import Airfoil, MorphAirfoil
-from airfoils.fileio import import_airfoil_data
-from aeroframe.interpol.translate import get_deformed_point
+from fileio import import_airfoil_data
+# from aeroframe.interpol.translate import get_deformed_point
 from schemadict import schemadict
 
 

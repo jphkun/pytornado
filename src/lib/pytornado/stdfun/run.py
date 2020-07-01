@@ -20,6 +20,7 @@
 # Authors:
 # * Alessandro Gastaldi
 # * Aaron Dettmann
+# * Jean-Philippe Kuntzer
 
 """
 PyTornado standard functions
@@ -28,14 +29,18 @@ Developed for Airinnova AB, Stockholm, Sweden.
 """
 
 import logging
-
 import commonlibs.logger as hlogger
-
 from pytornado.__version__ import __version__
 from pytornado.objects.vlm_struct import VLMData
 import pytornado.aero.vlm as vlm
 import pytornado.fileio as io
 import pytornado.plot.makeplots as makeplots
+import pytornado.fileio.native.deformation as deform
+import numpy as np
+
+
+import os 
+import pickle
 
 logger = logging.getLogger(__name__)
 __prog_name__ = 'pytornado'
@@ -83,21 +88,45 @@ def clean_project_dir(settings):
 
 def standard_run(args):
     """
-    Run a standard analysis
+    Run a standard analysis. This function is the brain of the program. The
+    function does the following:
+        1) (Setup) Reads the setting file and Sets the logging level for all
+            the functions and classes for the rest of the simulation
+
+        2) (Setup aircraft model and flight state) self explanatory
+
+        3) (Generate lattice) Allocates a variable and stores all the mesh
+            data into it. The file has the following structure:
+            * :lattice.p: panel corner points
+            * :lattice.v: panel vortex filament endpoints
+            * :lattice.c: panel collocation point
+            * :lattice.n: panel normal vector
+            * :lattice.a: panel surface area
+        4) (Computes VLM) Generates the LHS and RHS of the VLM. LHS being the
+            "downwash" matrix and RHS being "boundary" matrix. Solves the Ax=b
+            system and then computes the aircrafts results. The last step is
+            just summing up all the panels contribution in oder to have the
+            aircraft parameters.
 
     Args:
         :args: arguments (see StdRunArgs())
     """
-
-    # ===== Setup =====
+    # Sets logging level for the whole simulation by reading the "args"
+    # variable and displays program version.
     settings = get_settings(settings_filepath=args.run)
     hlogger.init(settings.paths('f_log'), level=args)
     logger = logging.getLogger(__name__)
     logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
 
     # ===== Setup aircraft model and flight state =====
-    aircraft = io.cpacs.aircraft.load(settings) if settings.aircraft_is_cpacs else io.native.aircraft.load(settings)
-    state = io.cpacs.state.load(settings) if settings.state_is_cpacs else io.native.state.load(settings)
+    # Chooses where (CPACS of JSON) to read the aircraft information and
+    # assing the values to the aircraft variable.
+    if settings.aircraft_is_cpacs: aircraft = io.cpacs.aircraft.load(settings)
+    else:                          aircraft = io.native.aircraft.load(settings)
+
+    # Sets state for the simulation (Mach number, altitude, AoA, etc...)
+    if settings.state_is_cpacs: state = io.cpacs.state.load(settings)
+    else:                       state = io.native.state.load(settings)
 
     # TODO: load as part of aircraft definition
     if settings.settings['deformation']:
@@ -109,14 +138,13 @@ def standard_run(args):
 
     # ----- Iterate through the flight states -----
     for i, cur_state in enumerate(state.iter_states()):
+
         settings.paths.counter = i
-        ##########################################################
+
         # TODO: Temporary workaround!
         settings.paths('d_results', make_dirs=True, is_dir=True)
         settings.paths('d_plots', make_dirs=True, is_dir=True)
-        ##########################################################
 
-        ##########################################################
         # TODO: Don't set refs here. Find better solution!
         cur_state.refs = aircraft.refs
         ##########################################################
@@ -127,6 +155,16 @@ def standard_run(args):
         ##########################################################
 
         lattice = vlm.gen_lattice(aircraft, cur_state, settings, make_new_subareas)
+        
+        # ===== Mesh Deformation =====    
+        
+        logger.info(settings.settings["aircraft"])
+        if  "Activated" in settings.settings["aircraft"]:
+            # Deforms the mesh and uploads the deformed one into the code
+            logger.info("===== Mesh deformation function activated =====")
+            deform.deformation(lattice,settings)
+        else:
+            logger.info("===== Mesh deformation function deactivated =====")
 
         # ===== VLM =====
         vlm.calc_downwash(lattice, vlmdata)
@@ -134,13 +172,36 @@ def standard_run(args):
         vlm.solver(vlmdata)
         vlm.calc_results(lattice, cur_state, vlmdata)
 
+
         # ===== Create plots and result files =====
         io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
         makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
-
-        ###############################################
+        
+        # TODO delete once the debugging phase is done
+        # Saves the results for comparison with the debugger.py function
+        path = str(settings.project_dir)
+        if  "Activated" in settings.settings["aircraft"]:
+            with open(path + '/lattice_defActivated.pkl', 'wb') as l:
+                pickle.dump(lattice, l)
+            l.close()
+            
+            with open(path + '/data_defActivated.pkl', 'wb') as d:
+                pickle.dump(vlmdata, d)
+            d.close()
+        
+        else:
+            with open(path + '/lattice_defDeactivated.pkl', 'wb') as l:
+                pickle.dump(lattice, l)
+            l.close()
+            
+            with open(path + '/data_defDeactivated.pkl', 'wb') as d:
+                pickle.dump(vlmdata, d)
+            d.close()
+        
+        
+        ################################################
         # TODO: Find better solution
-        ###############################################
+        ################################################
         # Save AeroPerformance map results
         state.results['Fx'].append(vlmdata.forces['x'])
         state.results['Fy'].append(vlmdata.forces['y'])
@@ -161,7 +222,7 @@ def standard_run(args):
         state.results['Cl'].append(vlmdata.coeffs['l'])
         state.results['Cm'].append(vlmdata.coeffs['m'])
         state.results['Cn'].append(vlmdata.coeffs['n'])
-        ###############################################
+        ################################################
 
     # ---------- Save aeroperformance map ----------
     if settings.aircraft_is_cpacs and settings.state_is_cpacs:
