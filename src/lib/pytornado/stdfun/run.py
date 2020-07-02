@@ -36,12 +36,11 @@ import pytornado.aero.vlm as vlm
 import pytornado.fileio as io
 import pytornado.plot.makeplots as makeplots
 import pytornado.fileio.native.deformation as deform
+
+### TODO delete once debug is done
 import numpy as np
-
-
-import os 
 import pickle
-
+###
 logger = logging.getLogger(__name__)
 __prog_name__ = 'pytornado'
 
@@ -182,7 +181,13 @@ def standard_run(args):
         path = str(settings.project_dir)
         if  "Activated" in settings.settings["aircraft"]:
             with open(path + '/lattice_defActivated.pkl', 'wb') as l:
-                pickle.dump(lattice, l)
+                var = [lattice.p,
+                       lattice.v,
+                       lattice.c,
+                       lattice.n,
+                       lattice.a,
+                       lattice.bound_leg_midpoints]
+                pickle.dump(var, l)
             l.close()
             
             with open(path + '/data_defActivated.pkl', 'wb') as d:
@@ -191,8 +196,15 @@ def standard_run(args):
         
         else:
             with open(path + '/lattice_defDeactivated.pkl', 'wb') as l:
-                pickle.dump(lattice, l)
+                var = [lattice.p,
+                       lattice.v,
+                       lattice.c,
+                       lattice.n,
+                       lattice.a,
+                       lattice.bound_leg_midpoints]
+                pickle.dump(var, l)
             l.close()
+            logger.debug(lattice)
             
             with open(path + '/data_defDeactivated.pkl', 'wb') as d:
                 pickle.dump(vlmdata, d)

@@ -35,8 +35,8 @@ def test_basic_usage():
              #"11_pytornado_dih_flaps_aft",
              #"12_pytornado_anh_flaps_aft",
              #"21_D150",
-             "22_Boxwing",
-             # "11_OptiMale"
+             #"22_Boxwing",
+             "23_OptiMale"
              ]
     
     tempActiv = [#"1_flat_funcActivated.json",
@@ -52,7 +52,8 @@ def test_basic_usage():
                  #"11_dih_funcActivated.json",
                  #"12_anh_funcActivated.json",
                  #"D150_AGILE_Hangar_funcActivated.json",
-                 "Boxwing_AGILE_Hangar_funActivated_v3.1.json",
+                 #"Boxwing_AGILE_Hangar_funActivated_v3.1.json",
+                 "Optimale_Tornado_SU2_funActivated.json"
                 ]
     
     tempDeactiv = [#"1_flat_funcDeactivated.json",
@@ -68,9 +69,12 @@ def test_basic_usage():
                    #"11_dih_funcDeactivated.json",
                    #"12_anh_funcDeactivated.json",
                    #"D150_AGILE_Hangar_funcDeactivated.json",
-                   "Boxwing_AGILE_Hangar_funDeactivated_v3.1.json",
+                   #"Boxwing_AGILE_Hangar_funDeactivated_v3.1.json",
+                   "Optimale_Tornado_SU2_funDeactivated.json"
                    ]
-    
+    # paths = paths[12]
+    # tempActiv = tempActiv[12]
+    # tempDeactiv = tempDeactiv[12]
     print(paths)
     for i in range(len(paths)):
         # Paths

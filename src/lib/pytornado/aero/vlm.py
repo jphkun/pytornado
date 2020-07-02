@@ -34,12 +34,12 @@ import numpy as np
 import scipy.linalg.lapack as lapack
 from commonlibs.math.vectors import axis_rot_matrix
 from commonlibs.math.interpolation import lin_interpol
-
 from pytornado.objects.vlm_struct import VLMLattice
 import pytornado.aero.c_vlm as c_vlm
 import pytornado.objects.objecttools as ot
 from pytornado.objects.vlm_struct import BookKeepingEntry
 from pytornado.objects.aircraft import get_abs_segment_point_coords
+import pickle
 
 logger = logging.getLogger(__name__)
 

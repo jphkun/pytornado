@@ -35,10 +35,11 @@ from commonlibs.logger import truncate_filepath
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from numpy import linalg as LA
 # from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation as R
-# from numpy.core.umath_tests import inner1d
-# import pickle
+
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ def shape_2(y):
     q = 500
     # [m] Wing span
     L = 5
-    logger.debug("L = " + str(L) )
+    # logger.debug("L = " + str(L) )
     # [Pa] Elasticity modulus
     E = 210e9
     # [m**4] Second moment of area
@@ -169,7 +170,7 @@ def shape_1(y,settings):
     """
     logger.info(settings.settings["aircraft"])
     if settings.settings["aircraft"] == "1_flat_funcActivated.json":
-        m = 0
+        m = 0   
         logger.info("wing slope m = "+str(m))
     elif settings.settings["aircraft"] == "2_dih_funcActivated.json":
         m = 0.1
@@ -205,10 +206,13 @@ def shape_1(y,settings):
         m = -0.1
         logger.info("wing slope m = "+str(m))
     elif settings.settings["aircraft"] == "D150_AGILE_Hangar_funActivated.xml":
-        m = 0.1
+        m = 1e-5
         logger.info("wing slope m = "+str(m))
     elif settings.settings["aircraft"] == "Boxwing_AGILE_Hangar_funActivated_v3.1.xml":
-        m = 0.1
+        m = 1e-5
+        logger.info("wing slope m = "+str(m))
+    elif settings.settings["aircraft"] == "Optimale_Tornado_SU2_funActivated.xml":
+        m = 1e-5
         logger.info("wing slope m = "+str(m))
     else:
         logger.error("Deformation input is wrong!")
@@ -224,6 +228,20 @@ def shape_3(z,settings):
     uy = m*z + h
     return uy
 
+def load_displacement_file(lattice,filename):
+    """
+    Loads a displacement file of format .csv and up
+
+    Returns
+    -------
+    None.
+
+    """
+    displacements = pd.read_csv(filename)
+    logger.debug("====== load displacement function called ==========")
+    logger.debug("displacement file:\n" + str(displacements.head))
+    logger.debug("actual points: \n" + str(lattice.p))
+    
 def deformation(lattice,settings):
     """
     Questions
@@ -281,38 +299,32 @@ def deformation(lattice,settings):
     y_c = np.abs(lattice_c[:,1])
     y_blm = np.abs(lattice_blm[:,1])
     
-    # Deformation of the wing, kept absolute to keep xz plane symmetry
-    z_p = np.abs(lattice_p[:,2])
-    z_v = np.abs(lattice_v[:,2])
-    z_c = np.abs(lattice_c[:,2])
-    z_blm = np.abs(lattice_blm[:,2])
-    
     # Computes the deformed surface
-    shape = 1
-    if shape == 1:
+    shape_func = 3
+    if shape_func == 1:
         uz_p = shape_1(y_p,settings)
         uz_v = shape_1(y_v,settings)
         uz_c = shape_1(y_c,settings)
         uz_blm = shape_1(y_blm,settings)
-    else:
+    elif shape_func == 2:
         uz_p = shape_2(y_p)
         uz_v = shape_2(y_v)
         uz_c = shape_2(y_c)
         uz_blm = shape_2(y_blm)
-    
-    shape3 = True
-    if shape3 == True:
-        uy_p = shape_3(z_p,settings)
-        uy_v = shape_3(z_v,settings)
-        uy_c = shape_3(z_c,settings)
-        uy_blm = shape_1(z_blm,settings)
+    elif shape_func == 3:
+        path = '/home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/wkdir/23_OptiMale/deformation/'
+        filename = 'Optimale_disp.csv'
+        full_path = path + filename
+        load_displacement_file(lattice,full_path)
+        uz_p = 0.0
+        uz_v = 0.0
+        uz_c = 0.0
+        uz_blm = 0.0
     else:
-        uy_p = 0
-        uy_v = 0
-        uy_c = 0
-        uy_blm = 0
-    # logger.debug("uz_p" + str(uz_p))
-    
+        uz_p = 0.0
+        uz_v = 0.0
+        uz_c = 0.0
+        uz_blm = 0.0
     # Computes the initial normal vector
     G = np.concatenate((lattice.c, lattice.c, lattice.c, lattice.c), axis=1)
     mat = lattice.p - G.reshape(s_p[0],s_p[1],s_p[2])
@@ -323,17 +335,13 @@ def deformation(lattice,settings):
     lattice_v[:,2] = lattice_v[:,2] + uz_v
     lattice_c[:,2] = lattice_c[:,2] + uz_c
     lattice_blm[:,2] = lattice_blm[:,2] + uz_blm
-    lattice_p[:,1] = lattice_p[:,1] + uy_p
-    lattice_v[:,1] = lattice_v[:,1] + uy_v
-    lattice_c[:,1] = lattice_c[:,1] + uy_c
-    lattice_blm[:,1] = lattice_blm[:,1] + uy_blm
     # Reshapes array, this permits pytornado be able to read it again
     lattice.p = lattice_p.reshape((s_p[0],s_p[1],s_p[2]))
     lattice.v = lattice_v.reshape((s_p[0],s_v[1],s_v[2]))
     lattice.c = lattice_c
     lattice.bound_leg_midpoints = lattice_blm
     
-    # Computes the initial normal vector
+    # Computes the initial normal vector by using SVD
     G = np.concatenate((lattice.c, lattice.c, lattice.c, lattice.c), axis=1)
     mat = lattice.p - G.reshape(s_p[0],s_p[1],s_p[2])
     u, s, vh_f = np.linalg.svd(mat)
@@ -345,10 +353,10 @@ def deformation(lattice,settings):
     rot[np.isnan(rot)] = 0.0
     
     # Computes the angle between the intial and deformed normal vector
-    # ab = lattice.n.dot(new_norm.T)
+    # dot product of vector a and b
     ab = np.einsum('ij,ij->i',vh_f[:,2,:],vh_i[:,2,:])
-    a = np.linalg.norm(vh_f[:,2,:], axis=1)
-    b = np.linalg.norm(vh_i[:,2,:], axis=1)
+    a = LA.norm(vh_f[:,2,:], axis=1)
+    b = LA.norm(vh_i[:,2,:], axis=1)
     angle = np.empty(len(ab))
     
     # selects the correct angle (clockwise or counterlockwise) depending on
@@ -365,9 +373,7 @@ def deformation(lattice,settings):
             angle[i] = np.arccos(ab[i]/(a[i]*b[i]))
     angle[np.isnan(angle)] = 0.0
     
-    # initializes all the quaternion rotations
-    quat = np.einsum('i,ij->ij',angle,rot)
-    r = R.from_rotvec(quat)
+    
     if lattice.n[:,2].mean() >= 0:
         quat = np.einsum('i,ij->ij',angle,rot)
         r = R.from_rotvec(quat)
@@ -378,14 +384,9 @@ def deformation(lattice,settings):
         logger.debug("normal vector point DOWN")
         
     lattice_n = r.apply(lattice.n)
-    logger.debug("  lattice Z direction:\n"+str(lattice_n[0,2]))
-    
+    # logger.debug("  lattice Z direction:\n"+str(lattice_n[0,2]))
     if lattice_n[:,2].mean() >= 0:
-        lattice.n = np.array((1.0,-1.0,-1.0))*lattice_n
-        logger.debug("normal vector point UP")
-    else:
-        lattice.n = lattice_n
-        logger.debug("normal vector point DOWN")
+        lattice_n = np.array((1.0,-1.0,-1.0))*lattice_n
     
     # Corrects the area
     s1 = lattice.p[:,0]-lattice.p[:,1]
