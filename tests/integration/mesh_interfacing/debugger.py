@@ -188,12 +188,12 @@ def main():
     
     # Plots normal vectors and cell centroids
     # print(lattice_dea)
-    for i in range(len(folders)):
-        # plot_points(lattice_dea[i][2],lattice_act[i][2])
-        plot_vec(lattice_dea[i][2],
-                  lattice_act[i][2],
-                  lattice_dea[i][3],
-                  lattice_act[i][3])
+    # for i in range(len(folders)):
+    #     # plot_points(lattice_dea[i][2],lattice_act[i][2])
+    #     plot_vec(lattice_dea[i][2],
+    #               lattice_act[i][2],
+    #               lattice_dea[i][3],
+    #               lattice_act[i][3])
     
 
     # # Compares results with deformation function activated or not
@@ -210,18 +210,31 @@ def main():
     print(df2)
     print(error)
     
-    
-    
     path = '/home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/wkdir/23_OptiMale/deformation/'
     filename = 'Optimale_disp.csv'
     full_path = path + filename
-    dlr = load_displacement_file(full_path)
+    # dlr = load_displacement_file(full_path)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1, projection='3d')
-    ax.scatter(dlr["x"],dlr["y"],dlr["z"],color="blue")
+    # ax.scatter(dlr["x"],dlr["y"],dlr["z"],color="blue",Label="dlr csv data")
+    s_p = lattice_dea[0][0].shape
+    print("p = " + str(s_p))
+    p = lattice_dea[0][0].reshape(s_p[0]*s_p[1],s_p[2])
+    print("new shape:"+str(p.shape))
+    ax.scatter(p[:,0],
+               p[:,1],
+               p[:,2],color="red",Label="mesh points")
     ax.scatter(lattice_dea[0][2][:,0],
                lattice_dea[0][2][:,1],
-               lattice_dea[0][2][:,2],color="red") 
+               lattice_dea[0][2][:,2],color="dimgrey",Label="cells centroids")
+    ax.set_xlim((-10,30))
+    ax.set_ylim((-20,20))
+    ax.set_zlim((-20,20))
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    ax.set_title("Airplane")
+    ax.legend()
     
 if __name__ == "__main__":
     main()

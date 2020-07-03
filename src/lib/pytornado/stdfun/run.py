@@ -128,8 +128,8 @@ def standard_run(args):
     else:                       state = io.native.state.load(settings)
 
     # TODO: load as part of aircraft definition
-    if settings.settings['deformation']:
-        io.native.deformation.load(aircraft, settings)
+    # if settings.settings['deformation']:
+    #     io.native.deformation.load(aircraft, settings)
 
     # ===== Generate lattice =====
     vlmdata = VLMData()
@@ -156,7 +156,6 @@ def standard_run(args):
         lattice = vlm.gen_lattice(aircraft, cur_state, settings, make_new_subareas)
         
         # ===== Mesh Deformation =====    
-        
         logger.info(settings.settings["aircraft"])
         if  "Activated" in settings.settings["aircraft"]:
             # Deforms the mesh and uploads the deformed one into the code
