@@ -52,7 +52,7 @@ def plot_vec(dea_c,act_c,dea_n,act_n):
                act_n[:,0],act_n[:,1],act_n[:,2],color="red")
 
     if max(dea_c[:,0])> 7:
-        ax.set_xlim((10,50))
+        ax.set_xlim((0,40))
         ax.set_ylim((-20,20))
         ax.set_zlim((-20,20))
     else:
@@ -96,7 +96,7 @@ def plot_points(dea,act):
     ax.scatter(dea[:,0], dea[:,1], dea[:,2],color="blue")
     ax.scatter(act[:,0], act[:,1], act[:,2],color="red")
     if max(dea[:,0])> 7:
-        ax.set_xlim((10,50))
+        ax.set_xlim((0,40))
         ax.set_ylim((-20,20))
         ax.set_zlim((-5,35))
     else:
@@ -106,7 +106,7 @@ def plot_points(dea,act):
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
-    ax.set_title("Airplane")
+    ax.set_title("Airplane points")
     plt.show()
     
 def load_displacement_file(filename):
@@ -142,21 +142,26 @@ def main():
     data_act = []
     lattice_dea = []
     lattice_act = []
-    folders = [#"1_pytornado_flat",
-               #"2_pytornado_dih",
-               #"3_pytornado_anh",
-               #"4_pytornado_flat_flaps",
-               #"5_pytornado_dih_flaps",
-               #"6_pytornado_anh_flaps",
-               #"7_pytornado_flat_flaps_swept",
-               #"8_pytornado_dih_flaps_swept",
-               #"9_pytornado_anh_flaps_swept",
-               #"10_pytornado_flat_flaps_aft",
-               #"11_pytornado_dih_flaps_aft",
-               #"12_pytornado_anh_flaps_aft",
-               #"21_D150",
-               #"22_Boxwing",
-               "23_OptiMale"
+    folders = ["1_pytornado_flat",
+               "2_pytornado_dih",
+               "3_pytornado_anh",
+               "4_pytornado_flat_flaps",
+               "5_pytornado_dih_flaps",
+               "6_pytornado_anh_flaps",
+               "7_pytornado_flat_flaps_swept",
+               "8_pytornado_dih_flaps_swept",
+               "9_pytornado_anh_flaps_swept",
+               "10_pytornado_flat_flaps_aft",
+               "11_pytornado_dih_flaps_aft",
+               "12_pytornado_anh_flaps_aft",
+               "21_AircraftMalo-std",
+               "22_B7772VSP",
+               "23_Boxwing",
+               "24_BWB_102_VTP1",
+               "25_BWB_ACFA_cpacs",
+               "26_Circlewing",
+               "28_D150",
+               "31_OptiMale"
                ]
     for folder in folders:
         # Builds all the needed paths
@@ -188,53 +193,75 @@ def main():
     
     # Plots normal vectors and cell centroids
     # print(lattice_dea)
+    
     # for i in range(len(folders)):
-    #     # plot_points(lattice_dea[i][2],lattice_act[i][2])
     #     plot_vec(lattice_dea[i][2],
     #               lattice_act[i][2],
     #               lattice_dea[i][3],
     #               lattice_act[i][3])
     
-
+    # for i in range(len(folders)):
+    #     plot_points(lattice_dea[i][0],lattice_act[i][0]) 
+    # for i in range(len(folders)):
+    #     plot_points(lattice_dea[i][1],lattice_act[i][1]) 
+    # for i in range(len(folders)):
+    #     plot_points(lattice_dea[i][5],lattice_act[i][5]) 
+    
+    
     # # Compares results with deformation function activated or not
     items = ["x","y","z","D","C","L","l","m","n"]
+    # epsilon_dea = [data_dea[i].epsilon for i in range(len(folders))]
+    # epsilon_act = [data_dea[i].epsilon for i in range(len(folders))]
+    matrix_downwash_dea = [data_dea[i].matrix_downwash for i in range(len(folders))]
+    matrix_downwash_act = [data_act[i].matrix_downwash for i in range(len(folders))]
+    array_rhs_dea = [data_dea[i].array_rhs for i in range(len(folders))]
+    array_rhs_act = [data_act[i].array_rhs for i in range(len(folders))]
     data_dea = [data_dea[i].forces for i in range(len(folders))]
     data_act = [data_act[i].forces for i in range(len(folders))]
-    index =[folders[i][12:] for i in range(len(folders))]
+    index =[folders[i][0:] for i in range(len(folders))]
+    
+    pd.options.display.float_format = '{0:4.2f}'.format
     pd.set_option('display.max_columns', None)
-    df1 = pd.DataFrame(data_dea,index,columns =items)
-    df2 = pd.DataFrame(data_act,index,columns =items)
+    pd.set_option('display.width', 1000)
+    pd.set_option('display.max_columns', 500)
+    df1 = pd.DataFrame(data_dea,index,columns=items)
+    df2 = pd.DataFrame(data_act,index,columns=items)
     error = 100*((df1-df2)/df2)
     
-    print(df1)
-    print(df2)
-    print(error)
+    print(df1.round(1))
+    print(df2.round(1))
+    print("Error %")
+    print(error.round(1))
     
-    path = '/home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/wkdir/23_OptiMale/deformation/'
-    filename = 'Optimale_disp.csv'
-    full_path = path + filename
-    # dlr = load_displacement_file(full_path)
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1, projection='3d')
-    # ax.scatter(dlr["x"],dlr["y"],dlr["z"],color="blue",Label="dlr csv data")
-    s_p = lattice_dea[0][0].shape
-    print("p = " + str(s_p))
-    p = lattice_dea[0][0].reshape(s_p[0]*s_p[1],s_p[2])
-    print("new shape:"+str(p.shape))
-    ax.scatter(p[:,0],
-               p[:,1],
-               p[:,2],color="red",Label="mesh points")
-    ax.scatter(lattice_dea[0][2][:,0],
-               lattice_dea[0][2][:,1],
-               lattice_dea[0][2][:,2],color="dimgrey",Label="cells centroids")
-    ax.set_xlim((-10,30))
-    ax.set_ylim((-20,20))
-    ax.set_zlim((-20,20))
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    ax.set_title("Airplane")
-    ax.legend()
+    print("\n")
+    print("Matrix downwash error")
+    print(np.max(matrix_downwash_dea[0]-matrix_downwash_act[0]))
+    print(np.min(matrix_downwash_dea[0]-matrix_downwash_act[0]))
     
+    print("array rhs error")
+    print(np.max(array_rhs_dea[0]-array_rhs_act[0]))
+    print(np.min(array_rhs_dea[0]-array_rhs_act[0]))
+    
+    # print(epsilon_dea)
+    # print(epsilon_act)
+    # path = '/home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/wkdir/23_OptiMale/deformation/'
+    # filename = 'Optimale_disp.csv'
+    # full_path = path + filename
+    # print(np.shape(lattice_act[0]))
+    
+    # header = ["p","v","c","n","a","blm"]
+    # for i in range(len(lattice_act)):
+    #     print("\n Avion:" + str(i))
+    #     for j in range(len(lattice_act[0])):
+    #         # print( ("Avion 0, (pvca) " + "%10.3E"% str(i)))
+    #         diff1 = np.max(lattice_act[i][j] - lattice_dea[i][j])
+    #         diff2 = np.min(lattice_act[i][j] - lattice_dea[i][j])
+    #         print(header[j])
+    #         print("%2.6f"% (diff1))
+    #         print("%2.6f"% (diff2))
+    
+    # print(lattice_act[0][4][:5])
+    # print(lattice_dea[0][4][:5])
+
 if __name__ == "__main__":
     main()

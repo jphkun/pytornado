@@ -35,7 +35,7 @@ from pytornado.objects.vlm_struct import VLMData
 import pytornado.aero.vlm as vlm
 import pytornado.fileio as io
 import pytornado.plot.makeplots as makeplots
-import pytornado.fileio.native.deformation as deform
+# import pytornado.fileio.native.deformation as deform
 
 ### TODO delete once debug is done
 import numpy as np
@@ -160,7 +160,14 @@ def standard_run(args):
         if  "Activated" in settings.settings["aircraft"]:
             # Deforms the mesh and uploads the deformed one into the code
             logger.info("===== Mesh deformation function activated =====")
-            deform.deformation(lattice,settings)
+            mesh_def = io.native.deformation.Mesh_Def(lattice)
+            mesh_def.deformation(settings)
+            lattice.p = mesh_def.f_p
+            lattice.v = mesh_def.f_v
+            lattice.c = mesh_def.f_c
+            lattice.bound_leg_midpoints = mesh_def.f_b
+            lattice.n = mesh_def.f_n
+            lattice.a = mesh_def.f_a
         else:
             logger.info("===== Mesh deformation function deactivated =====")
 
@@ -169,11 +176,6 @@ def standard_run(args):
         vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
         vlm.solver(vlmdata)
         vlm.calc_results(lattice, cur_state, vlmdata)
-
-
-        # ===== Create plots and result files =====
-        io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
-        makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
         
         # TODO delete once the debugging phase is done
         # Saves the results for comparison with the debugger.py function
@@ -209,6 +211,9 @@ def standard_run(args):
                 pickle.dump(vlmdata, d)
             d.close()
         
+        # ===== Create plots and result files =====
+        io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
+        makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
         
         ################################################
         # TODO: Find better solution
