@@ -130,11 +130,14 @@ class Mesh_Def:
         self.f_b = np.zeros([self.s_c[0]*self.s_c[1]])
         self.f_a = np.zeros([self.s_c[0]*self.s_c[1]])
         # Cells absolute y corrdinates (needed for testing and debug)
-        # Deformation of the wing, kept absolute to keep xz plane symmetry
         self.y_p = np.abs(self.ir_p[:,1])
         self.y_v = np.abs(self.ir_v[:,1])
         self.y_c = np.abs(self.i_c[:,1])
         self.y_b = np.abs(self.i_b[:,1])
+        self.x_p = np.abs(self.ir_p[:,0])
+        self.x_v = np.abs(self.ir_v[:,0])
+        self.x_c = np.abs(self.i_c[:,0])
+        self.x_b = np.abs(self.i_b[:,0])
         # Mesh displacement
         self.u_p = np.zeros((self.s_p[0]*self.s_p[1],self.s_p[2]))
         self.u_v = np.zeros((self.s_p[0]*self.s_p[1],self.s_p[2]))

@@ -194,11 +194,11 @@ def main():
     # Plots normal vectors and cell centroids
     # print(lattice_dea)
     
-    # for i in range(len(folders)):
-    #     plot_vec(lattice_dea[i][2],
-    #               lattice_act[i][2],
-    #               lattice_dea[i][3],
-    #               lattice_act[i][3])
+    for i in range(len(folders)):
+        plot_vec(lattice_dea[i][2],
+                  lattice_act[i][2],
+                  lattice_dea[i][3],
+                  lattice_act[i][3])
     
     # for i in range(len(folders)):
     #     plot_points(lattice_dea[i][0],lattice_act[i][0]) 
