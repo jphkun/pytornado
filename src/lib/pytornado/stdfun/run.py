@@ -37,10 +37,9 @@ import pytornado.fileio as io
 import pytornado.plot.makeplots as makeplots
 # import pytornado.fileio.native.deformation as deform
 
-### TODO delete once debug is done
-import numpy as np
+# TODO delete once debug is done
 import pickle
-###
+#
 logger = logging.getLogger(__name__)
 __prog_name__ = 'pytornado'
 
@@ -85,6 +84,28 @@ def clean_project_dir(settings):
     settings.clean()
 
 
+def save_to_pkl(path,lattice,vlmdata,activation):
+    if activation:
+        name_lattice = '/lattice_defActivated.pkl'
+        name_vlmdata = '/data_defActivated.pkl'
+    else:
+        name_lattice = '/lattice_defDeactivated.pkl'
+        name_vlmdata = '/data_defDeactivated.pkl'
+    with open(path + name_lattice, 'wb') as la:
+        var = [lattice.p,  # 0
+               lattice.v,  # 1
+               lattice.c,  # 2
+               lattice.n,  # 3
+               lattice.a,  # 4
+               lattice.bound_leg_midpoints]  # 5
+        pickle.dump(var, la)
+    la.close()
+
+    with open(path + name_vlmdata, 'wb') as d:
+        pickle.dump(vlmdata, d)
+    d.close()
+
+
 def standard_run(args):
     """
     Run a standard analysis. This function is the brain of the program. The
@@ -120,12 +141,16 @@ def standard_run(args):
     # ===== Setup aircraft model and flight state =====
     # Chooses where (CPACS of JSON) to read the aircraft information and
     # assing the values to the aircraft variable.
-    if settings.aircraft_is_cpacs: aircraft = io.cpacs.aircraft.load(settings)
-    else:                          aircraft = io.native.aircraft.load(settings)
+    if settings.aircraft_is_cpacs:
+        aircraft = io.cpacs.aircraft.load(settings)
+    else:
+        aircraft = io.native.aircraft.load(settings)
 
     # Sets state for the simulation (Mach number, altitude, AoA, etc...)
-    if settings.state_is_cpacs: state = io.cpacs.state.load(settings)
-    else:                       state = io.native.state.load(settings)
+    if settings.state_is_cpacs:
+        state = io.cpacs.state.load(settings)
+    else:
+        state = io.native.state.load(settings)
 
     # TODO: load as part of aircraft definition
     # if settings.settings['deformation']:
@@ -153,19 +178,22 @@ def standard_run(args):
         make_new_subareas = True if i == 0 else False
         ##########################################################
 
-        lattice = vlm.gen_lattice(aircraft, cur_state, settings, make_new_subareas)
-        
-        # ===== Mesh Deformation =====    
+        lattice = vlm.gen_lattice(aircraft,
+                                  cur_state,
+                                  settings,
+                                  make_new_subareas)
+
+        # ===== Mesh Deformation =====
         logger.info(settings.settings["aircraft"])
-        if  "Activated" in settings.settings["aircraft"]:
+        if "Activated" in settings.settings["aircraft"]:
             # Deforms the mesh and uploads the deformed one into the code
             logger.info("===== Mesh deformation function activated =====")
             mesh_def = io.native.deformation.Mesh_Def(lattice)
             mesh_def.deformation(settings)
             lattice.p = mesh_def.f_p
-            lattice.v = mesh_def.f_v
+            lattice.v = mesh_def.f_v  # turns everything down
             lattice.c = mesh_def.f_c
-            lattice.bound_leg_midpoints = mesh_def.f_b
+            lattice.bound_leg_midpoints = mesh_def.f_b  # turns everything up
             lattice.n = mesh_def.f_n
             lattice.a = mesh_def.f_a
         else:
@@ -176,45 +204,19 @@ def standard_run(args):
         vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
         vlm.solver(vlmdata)
         vlm.calc_results(lattice, cur_state, vlmdata)
-        
-        # TODO delete once the debugging phase is done
+
         # Saves the results for comparison with the debugger.py function
+        # TODO delete once the debugging phase is done
         path = str(settings.project_dir)
-        if  "Activated" in settings.settings["aircraft"]:
-            with open(path + '/lattice_defActivated.pkl', 'wb') as l:
-                var = [lattice.p,
-                       lattice.v,
-                       lattice.c,
-                       lattice.n,
-                       lattice.a,
-                       lattice.bound_leg_midpoints]
-                pickle.dump(var, l)
-            l.close()
-            
-            with open(path + '/data_defActivated.pkl', 'wb') as d:
-                pickle.dump(vlmdata, d)
-            d.close()
-        
+        if "Activated" in settings.settings["aircraft"]:
+            save_to_pkl(path,lattice,vlmdata,True)
         else:
-            with open(path + '/lattice_defDeactivated.pkl', 'wb') as l:
-                var = [lattice.p,
-                       lattice.v,
-                       lattice.c,
-                       lattice.n,
-                       lattice.a,
-                       lattice.bound_leg_midpoints]
-                pickle.dump(var, l)
-            l.close()
-            logger.debug(lattice)
-            
-            with open(path + '/data_defDeactivated.pkl', 'wb') as d:
-                pickle.dump(vlmdata, d)
-            d.close()
-        
+            save_to_pkl(path,lattice,vlmdata,False)
+
         # ===== Create plots and result files =====
         io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
         makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
-        
+
         ################################################
         # TODO: Find better solution
         ################################################

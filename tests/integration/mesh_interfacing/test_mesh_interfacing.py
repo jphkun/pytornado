@@ -3,24 +3,30 @@
 
 import os
 import json
-# import shutil
+import time
 from pathlib import Path
-import pytornado.database.tools as dbtools
+# import pytornado.database.tools as dbtools
+
 
 def test_basic_usage():
     """
     Test all the cases
     """
+    # Bechmark time start
+    t0 = time.time()
+
     # if true : Activates deformation and selects the undefored file in the
     #           aircraft file.
     # if false: Deactivates the deformation function and selects the deformed
-    #           file. This mode is selected as reference to test the 
+    #           file. This mode is selected as reference to test the
     #           deformation function.
     deform = True
-    
+    start = 19
+    end = 20
     # Working directory path
-    absolute_path = "/home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/wkdir/"
-    
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    absolute_path = current_directory + "/wkdir/"
+
     # list of all the tests
     paths = ["1_pytornado_flat",
              "2_pytornado_dih",
@@ -43,7 +49,7 @@ def test_basic_usage():
              "28_D150",
              "31_OptiMale",
              ]
-    
+
     tempActiv = ["1_flat_funcActivated.json",
                  "2_dih_funcActivated.json",
                  "3_anh_funcActivated.json",
@@ -64,8 +70,8 @@ def test_basic_usage():
                  "Circlewing_Test.v_3.1_funActivated.json",
                  "D150_AGILE_Hangar_funcActivated.json",
                  "Optimale_Tornado_SU2_funActivated.json",
-                ]
-    
+                 ]
+
     tempDeactiv = ["1_flat_funcDeactivated.json",
                    "2_dih_funcDeactivated.json",
                    "3_anh_funcDeactivated.json",
@@ -84,32 +90,29 @@ def test_basic_usage():
                    "BWB_102_VTP1_v3.1_funDeactivated.json",
                    "BWB_ACFA_cpacs_v3.1_funDeactivated.json",
                    "Circlewing_Test.v_3.1_funDeactivated.json",
-                   "D150_AGILE_Hangar_funcDeactivated.json",   
+                   "D150_AGILE_Hangar_funcDeactivated.json",
                    "Optimale_Tornado_SU2_funDeactivated.json",
                    ]
-    
-    # paths = paths[12]
-    # tempActiv = tempActiv[12]
-    # tempDeactiv = tempDeactiv[12]
-    
-    print(paths)
-    
-    for i in range(len(paths)):
+
+    for i in range(len(paths[start:end])):
         # Paths
-        project_dir = Path(absolute_path + paths[i])
-        
+        project_dir = Path(absolute_path + paths[start+i])
+
         if deform:
-            # deformation function will deform the undeformed airplane mesh
-            settings_file = Path(os.path.join(project_dir, 'settings', tempActiv[i]))
+            # deformation function will deform the undeformed airplane mesh.
+            settings_file = Path(os.path.join(project_dir,'settings',
+                                              tempActiv[start+i]))
         else:
-            # since def. function is not actived airplane mesh needs to be deformed by the file
-            settings_file = Path(os.path.join(project_dir, 'settings', tempDeactiv[i]))
-        
+            # since def. function is not actived airplane mesh needs to be
+            # deformed by the file.
+            settings_file = Path(os.path.join(project_dir,'settings',
+                                              tempDeactiv[start+i]))
+
         print(settings_file)
-        
+
         results_dir = Path(os.path.join(project_dir, '_results'))
         plot_dir = Path(os.path.join(project_dir, '_plots'))
-        
+
         # ------ Make sure it runs -----
         with open(settings_file, "r") as fp:
             settings = json.load(fp)
@@ -117,9 +120,16 @@ def test_basic_usage():
         settings['plot']['results']['save'] = False
         with open(settings_file, "w") as fp:
             json.dump(settings, fp)
+        #   -v, --verbose; -d, --debug; -q, --quiet
         os.system(f"pytornado -d --clean --run {settings_file}")
         assert plot_dir.is_dir()
         assert results_dir.is_dir()
+
+    # End of bechmark
+    t1 = time.time()
+    total_execution_time = t1 - t0
+    print("Execution time: " + str(total_execution_time))
+
 
 if __name__ == '__main__':
     test_basic_usage()

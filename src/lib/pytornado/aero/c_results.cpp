@@ -33,6 +33,11 @@ Authors:
 */
 
 #include "c_vlm.h"
+// #include <iostream>
+// #include <fstream>
+// #include <cmath>
+
+using namespace std;
 
 // ===== INWASH =====
 void vlm_results(latticestruct* lattice, statestruct* state,
@@ -107,9 +112,13 @@ void vlm_results(latticestruct* lattice, statestruct* state,
                 double rcross_x = r1_y*r2_z - r1_z*r2_y;
                 double rcross_y = r1_z*r2_x - r1_x*r2_z;
                 double rcross_z = r1_x*r2_y - r1_y*r2_x;
-
+                
                 /* INDUCED VELOCITY FOR UNIT VORTEX STRENGTH *****************/
                 double v_c = (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag*(1 + lattice->EPSILON)))*(1/r1_mag + 1/r2_mag);
+                // !!! TEMP workaround !!!
+                if (v_c > 100000){
+                    v_c = 0;
+                }
                 double v_x = v_c*rcross_x;
                 double v_y = v_c*rcross_y;
                 double v_z = v_c*rcross_z;
@@ -120,7 +129,6 @@ void vlm_results(latticestruct* lattice, statestruct* state,
                 dw_y += v_y;
                 dw_z += v_z;
             }
-
             results->iw_x[i] += dw_x*results->gamma[j];
             results->iw_y[i] += dw_y*results->gamma[j];
             results->iw_z[i] += dw_z*results->gamma[j];
@@ -196,7 +204,6 @@ void vlm_results(latticestruct* lattice, statestruct* state,
 
         results->cp[i] = fpan_n/(q*lattice->A[i]);
     }
-
     // Once global loads are computed, get corresponding coefficients
     vlm_coeffs(lattice, state, refs, results);
 }
