@@ -25,7 +25,7 @@ def test_basic_usage():
     end = 20
     # Working directory path
     current_directory = os.path.dirname(os.path.abspath(__file__))
-    absolute_path = current_directory + "/wkdir/"
+    absolute_path = current_directory + "/wkdir_1/"
 
     # list of all the tests
     paths = ["1_pytornado_flat",
