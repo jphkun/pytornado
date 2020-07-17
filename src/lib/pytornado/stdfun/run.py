@@ -185,7 +185,7 @@ def standard_run(args):
 
         # ===== Mesh Deformation =====
         logger.info(settings.settings["aircraft"])
-        if "Activated" in settings.settings["aircraft"]:
+        if settings.settings["deformation"]:
             # Deforms the mesh and uploads the deformed one into the code
             logger.info("===== Mesh deformation function activated =====")
             mesh_def = io.native.deformation.Mesh_Def(lattice)
@@ -208,7 +208,7 @@ def standard_run(args):
         # Saves the results for comparison with the debugger.py function
         # TODO delete once the debugging phase is done
         path = str(settings.project_dir)
-        if "Activated" in settings.settings["aircraft"]:
+        if settings.settings["deformation"]:
             save_to_pkl(path,lattice,vlmdata,True)
         else:
             save_to_pkl(path,lattice,vlmdata,False)

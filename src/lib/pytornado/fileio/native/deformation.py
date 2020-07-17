@@ -175,6 +175,11 @@ class Mesh_Def:
             m = const
         elif case == "Optimale_Tornado_SU2_funActivated.xml":
             m = const
+        elif "Wing_" in case:
+            logger.debug(int(case[15:-4]))
+            m = np.linspace(0,0.1,13)
+            m = m[int(case[15:-4])-1]
+            
         else:
             logger.warning("Deformation input UNEXPECTED")
 
@@ -201,16 +206,16 @@ class Mesh_Def:
 
     def shape_2(self):
         """
-        Shapte function2. This function computes the slope at each y location
+        Shape function2. This function computes the slope at each y location
         for a cantilever beam of length "L", with a distributed load of "q".
         The Young modulus is imposed for steel and "I" the second moment of
         inertia is also imposed.
         """
         logger.info("Shape function 2 is selected")
         # [N/m] Distributed load
-        q = 200
+        q = 2000000
         # [m] Wing span
-        L = 15
+        L = 1
         # logger.debug("L = " + str(L) )
         # [Pa] Elasticity modulus
         E = 210e9
@@ -355,20 +360,23 @@ class Mesh_Def:
         u, s, vh_i = LA.svd(mat)
 
         # user input choice
-        shape_func = 3
+        # TODO make it simpler for future use
+        
         path = str(settings.paths('f_deformation'))
-        # logger.debug(path[-4:])
-        if path[-4:] == "None":
-            if shape_func == 1:
-                self.shape_1(settings)
-            elif shape_func == 2:
-                self.shape_2()
-            else:
-                logger.error("No shape function selected")
+        logger.debug(settings.settings["deformation_method"])
+        # if path[-4:] == "None":
+        if settings.settings["deformation_method"] == "shape_1":
+            self.shape_1(settings)
+        elif settings.settings["deformation_method"] == "shape_2":
+            self.shape_2()
+        elif settings["deformation_method"] == "load_from_csv":
+            self.shape_2()
         else:
-            # TODO implement the deformation via CSV file here
-            logger.error("Deformation from file")
-            self.csv_deformation(settings)
+            logger.error("No shape function selected")
+        # else:
+        #     # TODO implement the deformation via CSV file here
+        #     logger.error("Deformation from file")
+        #     self.csv_deformation(settings)
 
         # Computes the deformed reference frame by using the same SVD proprety
         # as before.

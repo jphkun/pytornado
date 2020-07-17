@@ -12,7 +12,7 @@ import pickle
 import os
 import pandas as pd
 import numpy as np
-
+import glob
 
 def plot_vec_mult(dea_c, act_c, dea_n, act_n):
     """
@@ -189,11 +189,12 @@ def panelwise(i,data_dea,data_act,name,plot):
 
 def main():
     # When to start and stop or plot
+    wkdir = "01_validation"
     start = 0
-    stop = 20
-    plot_p = False
+    stop = 1
+    plot_p = True
     plot_v = False
-    plot_n = True
+    plot_n = False
     plot_blm = False
     downwash = False
     rhs_plot = False
@@ -216,33 +217,51 @@ def main():
     data_act = []
     lattice_dea = []
     lattice_act = []
-    folders = ["1_pytornado_flat",
-               "2_pytornado_dih",
-               "3_pytornado_anh",
-               "4_pytornado_flat_flaps",
-               "5_pytornado_dih_flaps",
-               "6_pytornado_anh_flaps",
-               "7_pytornado_flat_flaps_swept",
-               "8_pytornado_dih_flaps_swept",
-               "9_pytornado_anh_flaps_swept",
-               "10_pytornado_flat_flaps_aft",
-               "11_pytornado_dih_flaps_aft",
-               "12_pytornado_anh_flaps_aft",
-               "21_AircraftMalo-std",
-               "22_B7772VSP",
-               "23_Boxwing",
-               "24_BWB_102_VTP1",
-               "25_BWB_ACFA_cpacs",
-               "26_Circlewing",
-               "28_D150",
-               "31_OptiMale"
-               ]
-    folders = folders[start:stop]
+    
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    absolute_path = current_directory + "/" + wkdir + "/"
+    paths = glob.glob(absolute_path + "/*")
+    print(absolute_path)
+    print(paths)
+    # folders1 = ["1_pytornado_flat",
+    #            "2_pytornado_dih",
+    #            "3_pytornado_anh",
+    #            "4_pytornado_flat_flaps",
+    #            "5_pytornado_dih_flaps",
+    #            "6_pytornado_anh_flaps",
+    #            "7_pytornado_flat_flaps_swept",
+    #            "8_pytornado_dih_flaps_swept",
+    #            "9_pytornado_anh_flaps_swept",
+    #            "10_pytornado_flat_flaps_aft",
+    #            "11_pytornado_dih_flaps_aft",
+    #            "12_pytornado_anh_flaps_aft",
+    #            "21_AircraftMalo-std",
+    #            "22_B7772VSP",
+    #            "23_Boxwing",
+    #            "24_BWB_102_VTP1",
+    #            "25_BWB_ACFA_cpacs",
+    #            "26_Circlewing",
+    #            "28_D150",
+    #            "31_OptiMale"
+    #            ]
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    # folders2 = ["Wing_1",
+    #             "Wing_2",
+    #             "Wing_3",
+    #             "Wing_4",
+    #             "Wing_5",
+    #            ]
+    # if wkdir == "wkdir_1":
+    #     folders = folders1
+    # else:
+    #     folders = folders2
+    # folders = folders[start:stop]
+
+    # dir_path = os.path.dirname(os.path.realpath(__file__))
+    folders = paths[start:stop]
     for folder in folders:
         # Builds all the needed paths
-        path = dir_path+"/wkdir/"+folder
+        path = folder # dir_path + "/" + wkdir + "/" + folder
         path_d_dea = path + "/data_defDeactivated.pkl"
         path_l_dea = path + "/lattice_defDeactivated.pkl"
         path_d_act = path + "/data_defActivated.pkl"
@@ -283,16 +302,16 @@ def main():
             l_dea = np.array(lattice_dea[i][1])
             s = l_dea.shape
             plot_hsv(lattice_dea[i][1].reshape(s[0]*s[1],s[2]),
-                     lattice_act[i][1].reshape(s[0]*s[1],s[2]),
-                     title="HSV")
+                      lattice_act[i][1].reshape(s[0]*s[1],s[2]),
+                      title="HSV")
 
     # Plots normal vectors and cell centroids
     if plot_n:
         for i in range(len(folders)):
             plot_vec(lattice_dea[i][2],
-                     lattice_act[i][2],
-                     lattice_dea[i][3],
-                     lattice_act[i][3])
+                      lattice_act[i][2],
+                      lattice_dea[i][3],
+                      lattice_act[i][3])
 
     # Plots bounleg midpoints
     if plot_blm:
@@ -387,7 +406,7 @@ def main():
                                   "rhs max": np.max(err_rhs),
                                   "rhs min": np.min(err_rhs)
                                   },
-                                 ignore_index=True)
+                                  ignore_index=True)
         if gamma_plot:
             # print(rhs_dea.shape)
             plt.matshow(np.concatenate([[gamma_dea],[gamma_dea]]).T)
