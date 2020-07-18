@@ -465,13 +465,6 @@ def calc_boundary(lattice, state, vlmdata):
     c_vlm.py2c_boundary(lattice, state, vlmdata.array_rhs)
     vlmdata.array_rhs = np.array(vlmdata.array_rhs)
 
-    # TODO delete once debug is done
-    path = "/home/cfse2/Documents/1_PDM/FE_test/2_Pytornado_test/1_pytornado_flat/"
-    rhs = open(path+'rhs.pckl', 'wb')
-    pickle.dump(vlmdata.array_rhs, rhs)
-    rhs.close()
-    ###
-
 def solver(vlmdata):
     """
     Solve linear system for vortex strengths
@@ -483,13 +476,6 @@ def solver(vlmdata):
     logger.info("Solving linear system...")
     vlmdata.matrix_lu, vlmdata.array_pivots, vlmdata.panelwise['gamma'], _ \
         = lapack.dgesv(vlmdata.matrix_downwash, vlmdata.array_rhs)
-
-    # TODO delete once debug is done
-    path = "/home/cfse2/Documents/1_PDM/FE_test/2_Pytornado_test/1_pytornado_flat/"
-    rhs = open(path+'gamma.pckl', 'wb')
-    pickle.dump(vlmdata.panelwise['gamma'], rhs)
-    rhs.close()
-    ###
 
 
 ########
