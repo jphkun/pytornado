@@ -33,11 +33,12 @@ Authors:
 */
 
 #include "c_vlm.h"
-// #include <iostream>
-// #include <fstream>
-// #include <cmath>
-
+#include <iostream>
+#include <fstream>
+#include <errno.h>
 using namespace std;
+
+
 
 // ===== INWASH =====
 void vlm_results(latticestruct* lattice, statestruct* state,
@@ -53,6 +54,8 @@ void vlm_results(latticestruct* lattice, statestruct* state,
     double vel_wind_x = -state->airspeed*freestream_dir[0];
     double vel_wind_y = -state->airspeed*freestream_dir[1];
     double vel_wind_z = -state->airspeed*freestream_dir[2];
+    
+    long double v_c = 0;
 
     // Make sure global forces/moments initialised with '0', the loads are added up below
     results->ftot_x = 0.;
@@ -62,6 +65,31 @@ void vlm_results(latticestruct* lattice, statestruct* state,
     results->mtot_x = 0.;
     results->mtot_y = 0.;
     results->mtot_z = 0.;
+    
+    // START For the debugging of issue 22
+    /*
+    std::ofstream logger ("/home/user/Documents/pytornado/src/lib/pytornado/aero/IssueCurvedWinglog.csv");
+    logger << "r1_x" << ";";
+    logger << "r1_y" << ";";
+    logger << "r1_z" << ";";
+    logger << "r2_x" << ";";
+    logger << "r2_y" << ";";
+    logger << "r2_z" << ";";
+    logger << "r1r2_dot" << ";";
+    logger << "r1_mag" << ";";
+    logger << "r2_mag" << ";";
+    logger << "lattice->EPSILON" << ";";
+    logger << "(1/(4.0*PI))" << ";";
+    logger << "(r1r2_dot + r1_mag*r2_mag)" << ";";
+    logger << "(1/(r1r2_dot + r1_mag*r2_mag))" << ";";
+    logger << "(1/r1_mag + 1/r2_mag)" << ";";
+    logger << "(1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag))*(1/r1_mag + 1/r2_mag)" << ";";
+    logger << "(1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag*(1 + lattice->EPSILON)))*(1/r1_mag + 1/r2_mag)" << ";";
+    logger << "1/r1_mag" << ";";
+    logger << "1/r2_mag" << ";";
+    logger << endl;
+    */
+    // END For the debugging of issue 22
 
     for (int i = 0 ; i < num_pan ; ++i)
     {
@@ -98,15 +126,15 @@ void vlm_results(latticestruct* lattice, statestruct* state,
                 double r1_x = P_x - lattice->V[index_V1    ];
                 double r1_y = P_y - lattice->V[index_V1 + 1];
                 double r1_z = P_z - lattice->V[index_V1 + 2];
-                double r1_mag = sqrt(r1_x*r1_x + r1_y*r1_y + r1_z*r1_z);
+                long double r1_mag = sqrt(r1_x*r1_x + r1_y*r1_y + r1_z*r1_z);
 
                 double r2_x = P_x - lattice->V[index_V2    ];
                 double r2_y = P_y - lattice->V[index_V2 + 1];
                 double r2_z = P_z - lattice->V[index_V2 + 2];
-                double r2_mag = sqrt(r2_x*r2_x + r2_y*r2_y + r2_z*r2_z);
+                long double r2_mag = sqrt(r2_x*r2_x + r2_y*r2_y + r2_z*r2_z);
 
                 // Dotproduct r1*r2
-                double r1r2_dot = r1_x*r2_x + r1_y*r2_y + r1_z*r2_z;
+                long double r1r2_dot = r1_x*r2_x + r1_y*r2_y + r1_z*r2_z;
 
                 /* CROSS-PRODUCT R1 x R2 *************************************/
                 double rcross_x = r1_y*r2_z - r1_z*r2_y;
@@ -114,9 +142,33 @@ void vlm_results(latticestruct* lattice, statestruct* state,
                 double rcross_z = r1_x*r2_y - r1_y*r2_x;
                 
                 /* INDUCED VELOCITY FOR UNIT VORTEX STRENGTH *****************/
-                double v_c = (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag*(1 + lattice->EPSILON)))*(1/r1_mag + 1/r2_mag);
+                // START For debugging issue 22
+                /*
+                logger << r1_x << ";";
+                logger << r1_y << ";";
+                logger << r1_z << ";";
+                logger << r2_x << ";";
+                logger << r2_y << ";";
+                logger << r2_z << ";";
+                logger << r1r2_dot << ";";
+                logger << r1_mag << ";";
+                logger << r2_mag << ";";
+                logger << lattice->EPSILON << ";";
+                logger << (1/(4.0*PI)) << ";";
+                logger << (r1r2_dot + r1_mag*r2_mag) << ";";
+                logger << (1/(r1r2_dot + r1_mag*r2_mag)) << ";";
+                logger << (1/r1_mag + 1/r2_mag) << ";";
+                logger << (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag))*(1/r1_mag + 1/r2_mag) << ";";
+                logger << (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag*(1 + lattice->EPSILON)))*(1/r1_mag + 1/r2_mag) << ";";
+                logger << 1/r1_mag << ";";
+                logger << 1/r2_mag << ";";
+                logger << endl;
+                */
+                // END For debugging issue 22
+                // double v_c = (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag*(1 + lattice->EPSILON)))*(1/r1_mag + 1/r2_mag);
+                long double v_c = (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag))*(1/r1_mag + 1/r2_mag);
                 // !!! TEMP workaround !!!
-                if (v_c > 100000){
+                if (abs(r1r2_dot + r1_mag*r2_mag) < lattice->EPSILON){
                     v_c = 0;
                 }
                 double v_x = v_c*rcross_x;
@@ -206,6 +258,9 @@ void vlm_results(latticestruct* lattice, statestruct* state,
     }
     // Once global loads are computed, get corresponding coefficients
     vlm_coeffs(lattice, state, refs, results);
+    // START For the debugging of issue 22
+    // logger.close();
+    // END For the debugging of issue 22
 }
 
 // ===== COEFFICIENTS =====

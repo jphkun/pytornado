@@ -24,7 +24,7 @@ def test_basic_usage():
     # if false: Deactivates the deformation function and selects the deformed
     #           file. This mode is selected as reference to test the
     #           deformation function.
-    deform = True
+    deform = False
     # Choices are:
     #   shape1
     #   shape2
@@ -47,8 +47,8 @@ def test_basic_usage():
             new.append(path)
     paths = sorted(new)
 
-    paths_act = glob.glob(absolute_path + "**/settings/*dea*.json")
-    paths_dea = glob.glob(absolute_path + "**/settings/*act*.json")
+    paths_act = glob.glob(absolute_path + "**/settings/*act*.json")
+    paths_dea = glob.glob(absolute_path + "**/settings/*dea*.json")
 
     for i in range(len(paths[start:end])):
         # Paths
@@ -73,13 +73,13 @@ def test_basic_usage():
         with open(settings_file, "r") as fp:
             settings = json.load(fp)
         settings['plot']['results']['show'] = False
-        settings['plot']['results']['save'] = False
+        settings['plot']['results']['save'] = True
         settings['deformation'] = deform
         settings['deformation_method'] = deformation_method
         with open(settings_file, "w") as fp:
             json.dump(settings, fp)
         #   -v, --verbose; -d, --debug; -q, --quiet
-        os.system(f"pytornado -d --clean --run {settings_file}")
+        os.system(f"pytornado -v --clean --run {settings_file}")
         # assert plot_dir.is_dir()
         # assert results_dir.is_dir()
 

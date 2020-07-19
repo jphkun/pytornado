@@ -1,6 +1,6 @@
 {
     "aero": {
-        "airspeed": 1,
+        "airspeed": 10,
         "alpha": 2,
         "altitude": null,
         "beta": 0,
