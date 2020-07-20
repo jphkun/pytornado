@@ -175,6 +175,8 @@ class Mesh_Def:
             m = const
         elif case == "Optimale_Tornado_SU2_funActivated.xml":
             m = const
+        elif case == "EbeeX_d0_q0.xml":
+            m = 0
         elif "Wing_" in case:
             logger.debug(int(case[15:-4]))
             m = np.linspace(0,0.1,13)

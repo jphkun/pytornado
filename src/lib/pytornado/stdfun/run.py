@@ -184,8 +184,8 @@ def standard_run(args):
                                   make_new_subareas)
 
         # ===== Mesh Deformation =====
-        logger.info(settings.settings["aircraft"])
-        if settings.settings["deformation"]:
+        logger.info(settings.settings["deformation"])
+        if settings.settings["deformation"] == true:
             # Deforms the mesh and uploads the deformed one into the code
             logger.info("===== Mesh deformation function activated =====")
             mesh_def = io.native.deformation.Mesh_Def(lattice)
@@ -206,9 +206,10 @@ def standard_run(args):
         vlm.calc_results(lattice, cur_state, vlmdata)
 
         # Saves the results for comparison with the debugger.py function
+        # These results are also saved in another format later in the code
         # TODO delete once the debugging phase is done
         path = str(settings.project_dir)
-        if settings.settings["deformation"]:
+        if settings.settings["save_results"]["panelwise"] == true:
             save_to_pkl(path,lattice,vlmdata,True)
         else:
             save_to_pkl(path,lattice,vlmdata,False)
