@@ -189,9 +189,10 @@ def panelwise(i,data_dea,data_act,name,plot):
 
 def main():
     # When to start and stop or plot
-    wkdir = "01_validation"
-    start = 0
-    stop = 1
+    wkdir = "01_validation/3_Wing_dih10_q0.5/2_DeformationFunctionShape2/1_c5s10"
+# /home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/01_validation/2_Wing_dih10_q0/3_DeformationFunctionLoadCSV/1_c5s10
+    start = 2
+    stop = 3
     plot_p = True
     plot_v = False
     plot_n = False

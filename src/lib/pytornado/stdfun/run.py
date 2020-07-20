@@ -185,7 +185,7 @@ def standard_run(args):
 
         # ===== Mesh Deformation =====
         logger.info(settings.settings["deformation"])
-        if settings.settings["deformation"] == true:
+        if settings.settings["deformation"]:
             # Deforms the mesh and uploads the deformed one into the code
             logger.info("===== Mesh deformation function activated =====")
             mesh_def = io.native.deformation.Mesh_Def(lattice)
@@ -209,10 +209,11 @@ def standard_run(args):
         # These results are also saved in another format later in the code
         # TODO delete once the debugging phase is done
         path = str(settings.project_dir)
-        if settings.settings["save_results"]["panelwise"] == true:
-            save_to_pkl(path,lattice,vlmdata,True)
-        else:
-            save_to_pkl(path,lattice,vlmdata,False)
+        if settings.settings["save_results"]["panelwise"]:
+            if settings.settings["deformation"]:
+                save_to_pkl(path,lattice,vlmdata,True)
+            else:
+                save_to_pkl(path,lattice,vlmdata,False)
 
         # ===== Create plots and result files =====
         io.native.results.save_all(settings, aircraft, cur_state, vlmdata)

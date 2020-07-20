@@ -176,7 +176,7 @@ class Mesh_Def:
         elif case == "Optimale_Tornado_SU2_funActivated.xml":
             m = const
         elif case == "EbeeX_d0_q0.xml":
-            m = 0
+            m = 0.0
         elif "Wing_" in case:
             logger.debug(int(case[15:-4]))
             m = np.linspace(0,0.1,13)
@@ -206,33 +206,61 @@ class Mesh_Def:
             dataset.to_csv(filepath[:-4]+name,index=False,float_format='%.18E')
             logger.info("csv file saved")
 
-    def shape_2(self):
+    def shape_2(self,settings):
         """
         Shape function2. This function computes the slope at each y location
         for a cantilever beam of length "L", with a distributed load of "q".
         The Young modulus is imposed for steel and "I" the second moment of
         inertia is also imposed.
         """
+        csv_save = True
+        case = settings.settings["aircraft"]
+
         logger.info("Shape function 2 is selected")
-        # [N/m] Distributed load
-        q = 2000000
-        # [m] Wing span
-        L = 1
-        # logger.debug("L = " + str(L) )
-        # [Pa] Elasticity modulus
-        E = 210e9
-        # [m**4] Second moment of area
-        Ix = 1.330e-6
-        # Computes beam deformation
-        self.u_p[:,2] = self.cantilever(self.y_p, q, L, E, Ix)
-        self.u_v[:,2] = self.cantilever(self.y_v, q, L, E, Ix)
-        self.u_c[:,2] = self.cantilever(self.y_c, q, L, E, Ix)
-        self.u_b[:,2] = self.cantilever(self.y_b, q, L, E, Ix)
-        # logger.debug(self.i_v)
+        if case == "EbeeX_d0_q0.xml":
+            m = 0.1975
+        else:
+            logger.warning("Deformation input UNEXPECTED")
+
+        h = 0
+        self.u_p[:,2] = m * self.y_p + h
+        self.u_v[:,2] = m * self.y_v + h
+        self.u_c[:,2] = m * self.y_c + h
+        self.u_b[:,2] = m * self.y_b + h
+        cst2 = 0.5
+        self.u_p[:,2] = self.u_p[:,2] + cst2*self.y_p**2
+        self.u_v[:,2] = self.u_v[:,2] + cst2*self.y_v**2
+        self.u_c[:,2] = self.u_c[:,2] + cst2*self.y_c**2
+        self.u_b[:,2] = self.u_b[:,2] + cst2*self.y_b**2
         self.mesh_update()
-        s = self.f_v.shape
-        var = self.f_v.reshape(s[0]*s[1],s[2]) - self.i_v.reshape(s[0]*s[1],s[2])
-        logger.debug(np.max(var[:,0]))
+        if csv_save:
+            headers = ["x","y","z","dx","dy","dz"]
+            points = np.concatenate((self.i_c,self.u_c),axis=1)
+            filepath = str(settings.paths('f_deformation'))
+            name = "deformation_data.csv"
+            dataset = pd.DataFrame(points,columns=headers)
+            dataset.to_csv(filepath[:-4]+name,index=False,float_format='%.18E')
+            logger.info("csv file saved")
+
+        # # [N/m] Distributed load
+        # q = 2000000
+        # # [m] Wing span
+        # L = 1
+        # # logger.debug("L = " + str(L) )
+        # # [Pa] Elasticity modulus
+        # E = 210e9
+        # # [m**4] Second moment of area
+        # Ix = 1.330e-6
+        # # Computes beam deformation
+        # self.u_p[:,2] = self.cantilever(self.y_p, q, L, E, Ix)
+        # self.u_v[:,2] = self.cantilever(self.y_v, q, L, E, Ix)
+        # self.u_c[:,2] = self.cantilever(self.y_c, q, L, E, Ix)
+        # self.u_b[:,2] = self.cantilever(self.y_b, q, L, E, Ix)
+        # # logger.debug(self.i_v)
+        # self.mesh_update()
+        # s = self.f_v.shape
+        # var = self.f_v.reshape(s[0]*s[1],s[2]) - self.i_v.reshape(s[0]*s[1],s[2])
+        # logger.debug(np.max(var[:,0]))
 
     def csv_deformation(self,settings):
         """
@@ -248,8 +276,8 @@ class Mesh_Def:
               with beams.
         """
         logger.debug("=== csv deformation function called ===")
-        path = settings.paths('f_deformation')
-        # logger.debug(path)
+        path = settings.paths('f_deformation_file')
+        logger.debug(path)
         try:
             dataset = pd.read_csv(path)
             dataset = dataset.to_numpy()
@@ -258,20 +286,7 @@ class Mesh_Def:
             z = dataset[:,2]
             d = dataset[:,3:]
             s = dataset.shape
-            logger.debug(y)
-            # separates left and right parts of the airplane to avoid
-            # interpolation errors in the center.
-            # left = np.zeros(s[0])
-            # right = np.ones(s[0])
-            # left[y<0] = 1
-            # right = right - left
-            # # separates values
-            # x_r = right * x
-            # x_l = left * x
-            # y_r =
-            # y_l =
-            # z_r =
-            # z_l =
+            # logger.debug(y)
 
             # angle = angle - corrector
         except FileNotFoundError:
@@ -365,14 +380,15 @@ class Mesh_Def:
         # TODO make it simpler for future use
         
         path = str(settings.paths('f_deformation'))
-        logger.debug(settings.settings["deformation_method"])
-        # if path[-4:] == "None":
+        logger.debug("Proceed to shape function selection")
         if settings.settings["deformation_method"] == "shape_1":
+            logger.debug(settings.settings["deformation_method"])
             self.shape_1(settings)
         elif settings.settings["deformation_method"] == "shape_2":
-            self.shape_2()
-        elif settings["deformation_method"] == "load_from_csv":
-            self.shape_2()
+            logger.debug(settings.settings["deformation_method"])
+            self.shape_2(settings)
+        elif settings.settings["deformation_method"] == "load_from_csv":
+            self.csv_deformation(settings)
         else:
             logger.error("No shape function selected")
         # else:
