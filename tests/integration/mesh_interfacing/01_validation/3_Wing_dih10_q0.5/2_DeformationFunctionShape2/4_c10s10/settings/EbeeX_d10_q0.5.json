@@ -16,12 +16,12 @@
 		"geometry": {
 			"opt": [], 
 			"show": false, 
-			"save": false
+			"save": true
         }, 
 		"lattice": {
 			"opt": [], 
 			"show": false, 
-			"save": false
+			"save": true
         }, 
         "matrix_downwash": {
             "opt": [], 
@@ -31,7 +31,7 @@
         "results": {
             "opt": ["cp"], 
             "show": false, 
-            "save": false
+            "save": true
         }
     }
 }

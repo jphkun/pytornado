@@ -1,7 +1,7 @@
 {
 "aircraft": "01_EbeeX_d10_q0.xml", 
 "state": "template.json", 
-"deformation": "false", 
+"deformation": false, 
 "deformation_method": null, 
 "vlm_autopanels_c": 5, 
 "vlm_autopanels_s": 20, 
@@ -15,12 +15,12 @@
 		"geometry": {
 			"opt": [], 
 			"show": false, 
-			"save": false
+			"save": true
 			}, 
 		"lattice": {
 			"opt": [], 
 			"show": false, 
-			"save": false
+			"save": true
         }, 
         "matrix_downwash": {
             "opt": [], 
@@ -30,7 +30,7 @@
         "results": {
             "opt": ["cp"], 
             "show": false, 
-            "save": false
+            "save": true
         }
     }
 }
