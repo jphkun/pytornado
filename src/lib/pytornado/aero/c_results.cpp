@@ -168,9 +168,11 @@ void vlm_results(latticestruct* lattice, statestruct* state,
                 // double v_c = (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag*(1 + lattice->EPSILON)))*(1/r1_mag + 1/r2_mag);
                 long double v_c = (1/(4.0*PI))*(1/(r1r2_dot + r1_mag*r2_mag))*(1/r1_mag + 1/r2_mag);
                 // !!! TEMP workaround !!!
+                /*
                 if (abs(r1r2_dot + r1_mag*r2_mag) < lattice->EPSILON){
                     v_c = 0;
                 }
+                */
                 double v_x = v_c*rcross_x;
                 double v_y = v_c*rcross_y;
                 double v_z = v_c*rcross_z;

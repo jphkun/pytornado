@@ -134,6 +134,7 @@ def standard_run(args):
     # Sets logging level for the whole simulation by reading the "args"
     # variable and displays program version.
     settings = get_settings(settings_filepath=args.run)
+    print(settings)
     hlogger.init(settings.paths('f_log'), level=args)
     logger = logging.getLogger(__name__)
     logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
@@ -261,3 +262,74 @@ def standard_run(args):
         "settings": settings,
     }
     return results
+
+def test():
+    print("STDUN function call")
+
+def meshing(args):
+    """
+        Generates the mesh files
+    """
+    # Sets logging level for the whole simulation by reading the "args"
+    # variable and displays program version.
+    settings = get_settings(settings_filepath=args.run)
+    hlogger.init(settings.paths('f_log'), level=args)
+    logger = logging.getLogger(__name__)
+    logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
+
+    # ===== Setup aircraft model and flight state =====
+    # Chooses where (CPACS of JSON) to read the aircraft information and
+    # assing the values to the aircraft variable.
+    if settings.aircraft_is_cpacs:
+        aircraft = io.cpacs.aircraft.load(settings)
+    else:
+        aircraft = io.native.aircraft.load(settings)
+
+    # Sets state for the simulation (Mach number, altitude, AoA, etc...)
+    if settings.state_is_cpacs:
+        state = io.cpacs.state.load(settings)
+    else:
+        state = io.native.state.load(settings)
+    # ===== Generate lattice =====
+    vlmdata = VLMData()
+    vlm.set_autopanels(aircraft, settings)
+
+    # ----- Iterate through the flight states -----
+    for i, cur_state in enumerate(state.iter_states()):
+
+        settings.paths.counter = i
+
+        # TODO: Temporary workaround!
+        settings.paths('d_results', make_dirs=True, is_dir=True)
+        settings.paths('d_plots', make_dirs=True, is_dir=True)
+
+        # TODO: Don't set refs here. Find better solution!
+        cur_state.refs = aircraft.refs
+        ##########################################################
+
+        ##########################################################
+        # TODO: Find better solution for pre_panelling() function
+        make_new_subareas = True if i == 0 else False
+        ##########################################################
+
+        lattice = vlm.gen_lattice(aircraft,
+                                  cur_state,
+                                  settings,
+                                  make_new_subareas)
+    return lattice, vlmdata, settings, aircraft, cur_state
+
+def solver(lattice, vlmdata, settings, aircraft, cur_state):
+    """
+    Solves mesh
+    """
+    # ===== VLM =====
+    vlm.calc_downwash(lattice, vlmdata)
+    vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
+    vlm.solver(vlmdata)
+    vlm.calc_results(lattice, cur_state, vlmdata)
+    
+    # ===== Create plots and result files =====
+    io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
+    makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
+    
+    return lattice, vlmdata

@@ -14,4 +14,6 @@ c_vlm.so: c_vlm.o c_lattice.o c_downwash.o c_boundary.o c_results.o
 
 # COMPILE
 c_vlm.o: c_vlm.cpp c_lattice.cpp c_downwash.cpp c_boundary.cpp c_results.cpp c_vlm.h
-	g++ -c -fPIC c_vlm.cpp c_lattice.cpp c_downwash.cpp c_boundary.cpp c_results.cpp -I /usr/include/python3.8 -I /home/user/anaconda3/envs/ceasiompy/lib/python3.7/site-packages/numpy/core/include
+	g++ -c -fPIC c_vlm.cpp c_lattice.cpp c_downwash.cpp c_boundary.cpp c_results.cpp -I /usr/include/python3.6m -I /usr/lib/python3.6/site-packages/numpy/core/include/
+
+	
