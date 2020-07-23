@@ -34,12 +34,12 @@ import numpy as np
 import scipy.linalg.lapack as lapack
 from commonlibs.math.vectors import axis_rot_matrix
 from commonlibs.math.interpolation import lin_interpol
+
 from pytornado.objects.vlm_struct import VLMLattice
 import pytornado.aero.c_vlm as c_vlm
 import pytornado.objects.objecttools as ot
 from pytornado.objects.vlm_struct import BookKeepingEntry
 from pytornado.objects.aircraft import get_abs_segment_point_coords
-import pickle
 
 logger = logging.getLogger(__name__)
 
@@ -268,10 +268,7 @@ def gen_lattice(aircraft, state, settings, make_new_subareas=True):
 
     # Start the panel bookkeping with a clean slate
     lattice = VLMLattice()
-    # TODO WARNING (Q) Why is there a cleaning function for a new and empty
-    # variable?
     lattice.clean_bookkeeping()
-
 
     logger.info("Getting lattice information ... ")
 
@@ -279,7 +276,6 @@ def gen_lattice(aircraft, state, settings, make_new_subareas=True):
     num_r = 0  # total number of panel strips
     num_p = 0  # total number of panels
 
-    ##########################################################################
     # PANEL COUNT AND BOOK KEEPING
     for this_subarea, _, this_segment, this_wing in ot.all_subareas(aircraft):
         wing = this_wing[2]
@@ -439,6 +435,7 @@ def calc_downwash(lattice, vlmdata):
     logger.info("Pre-allocating downwash matrix in memory...")
     num_p = lattice.info['num_panels']
     vlmdata.matrix_downwash = np.zeros((num_p, num_p), dtype=float, order='C')
+
     logger.info("Computing downwash factors...")
     c_vlm.py2c_downwash(lattice, vlmdata.matrix_downwash)
     logger.info(f"--> Condition number = {np.linalg.cond(vlmdata.matrix_downwash):.3e}")
@@ -465,6 +462,7 @@ def calc_boundary(lattice, state, vlmdata):
     c_vlm.py2c_boundary(lattice, state, vlmdata.array_rhs)
     vlmdata.array_rhs = np.array(vlmdata.array_rhs)
 
+
 def solver(vlmdata):
     """
     Solve linear system for vortex strengths
@@ -476,7 +474,6 @@ def solver(vlmdata):
     logger.info("Solving linear system...")
     vlmdata.matrix_lu, vlmdata.array_pivots, vlmdata.panelwise['gamma'], _ \
         = lapack.dgesv(vlmdata.matrix_downwash, vlmdata.array_rhs)
-
 
 ########
 ########

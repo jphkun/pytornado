@@ -37,6 +37,7 @@ def all_wings(aircraft):
     Yields:
         :this_wing: tuple containing the wing number, name and object
     """
+
     for wing_no, wing_data in enumerate(aircraft.wings.items()):
         wing_uid, wing_obj = wing_data
         yield (wing_no, wing_uid, wing_obj)

@@ -189,17 +189,18 @@ def panelwise(i,data_dea,data_act,name,plot):
 
 def main():
     # When to start and stop or plot
-    wkdir = "01_validation/3_Wing_dih10_q0.5/2_DeformationFunctionShape2/1_c5s10"
+    # wkdir = 
+    # "01_validation/3_Wing_dih10_q0.5/2_DeformationFunctionShape2/1_c5s10"
 # /home/cfse2/Documents/pytornado/tests/integration/mesh_interfacing/01_validation/2_Wing_dih10_q0/3_DeformationFunctionLoadCSV/1_c5s10
-    start = 2
-    stop = 3
-    plot_p = True
+    start = 0
+    stop = 1
+    plot_p = False
     plot_v = False
     plot_n = False
     plot_blm = False
-    downwash = False
-    rhs_plot = False
-    gamma_plot = False
+    downwash = True # OK error matches the order of change
+    rhs_plot = False # OK error matches the order of change
+    gamma_plot = False # OK error matches the order of change
     vm_plot = False
     vx_plot = False
     vy_plot = False
@@ -219,8 +220,9 @@ def main():
     lattice_dea = []
     lattice_act = []
     
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    absolute_path = current_directory + "/" + wkdir + "/"
+    # current_directory = os.path.dirname(os.path.abspath(__file__))
+    # absolute_path = current_directory + "/" + wkdir + "/"
+    absolute_path = "/home/cfse2/Documents/aeroframe_2/test/static"
     paths = glob.glob(absolute_path + "/*")
     print(absolute_path)
     print(paths)
@@ -277,6 +279,7 @@ def main():
         lattice_v_dea = pickle.load(l_dea)
         dat_v_act = pickle.load(d_act)
         lattice_v_act = pickle.load(l_act)
+        
         # Closes the .pkl files
         d_dea.close()
         l_dea.close()

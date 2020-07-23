@@ -29,17 +29,15 @@ Developed for Airinnova AB, Stockholm, Sweden.
 """
 
 import logging
+
 import commonlibs.logger as hlogger
+
 from pytornado.__version__ import __version__
 from pytornado.objects.vlm_struct import VLMData
 import pytornado.aero.vlm as vlm
 import pytornado.fileio as io
 import pytornado.plot.makeplots as makeplots
-# import pytornado.fileio.native.deformation as deform
 
-# TODO delete once debug is done
-import pickle
-#
 logger = logging.getLogger(__name__)
 __prog_name__ = 'pytornado'
 
@@ -84,57 +82,114 @@ def clean_project_dir(settings):
     settings.clean()
 
 
-def save_to_pkl(path,lattice,vlmdata,activation):
-    if activation:
-        name_lattice = '/lattice_defActivated.pkl'
-        name_vlmdata = '/data_defActivated.pkl'
-    else:
-        name_lattice = '/lattice_defDeactivated.pkl'
-        name_vlmdata = '/data_defDeactivated.pkl'
-    with open(path + name_lattice, 'wb') as la:
-        var = [lattice.p,  # 0
-               lattice.v,  # 1
-               lattice.c,  # 2
-               lattice.n,  # 3
-               lattice.a,  # 4
-               lattice.bound_leg_midpoints]  # 5
-        pickle.dump(var, la)
-    la.close()
-
-    with open(path + name_vlmdata, 'wb') as d:
-        pickle.dump(vlmdata, d)
-    d.close()
-
-
 def standard_run(args):
     """
-    Run a standard analysis. This function is the brain of the program. The
-    function does the following:
-        1) (Setup) Reads the setting file and Sets the logging level for all
-            the functions and classes for the rest of the simulation
-
-        2) (Setup aircraft model and flight state) self explanatory
-
-        3) (Generate lattice) Allocates a variable and stores all the mesh
-            data into it. The file has the following structure:
-            * :lattice.p: panel corner points
-            * :lattice.v: panel vortex filament endpoints
-            * :lattice.c: panel collocation point
-            * :lattice.n: panel normal vector
-            * :lattice.a: panel surface area
-        4) (Computes VLM) Generates the LHS and RHS of the VLM. LHS being the
-            "downwash" matrix and RHS being "boundary" matrix. Solves the Ax=b
-            system and then computes the aircrafts results. The last step is
-            just summing up all the panels contribution in oder to have the
-            aircraft parameters.
+    Run a standard analysis
 
     Args:
         :args: arguments (see StdRunArgs())
     """
+
+    # ===== Setup =====
+    settings = get_settings(settings_filepath=args.run)
+    hlogger.init(settings.paths('f_log'), level=args)
+    logger = logging.getLogger(__name__)
+    logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
+
+    # ===== Setup aircraft model and flight state =====
+    aircraft = io.cpacs.aircraft.load(settings) if settings.aircraft_is_cpacs else io.native.aircraft.load(settings)
+    state = io.cpacs.state.load(settings) if settings.state_is_cpacs else io.native.state.load(settings)
+
+    # TODO: load as part of aircraft definition
+    if settings.settings['deformation']:
+        io.native.deformation.load(aircraft, settings)
+
+    # ===== Generate lattice =====
+    vlmdata = VLMData()
+    vlm.set_autopanels(aircraft, settings)
+
+    # ----- Iterate through the flight states -----
+    for i, cur_state in enumerate(state.iter_states()):
+        settings.paths.counter = i
+        ##########################################################
+        # TODO: Temporary workaround!
+        settings.paths('d_results', make_dirs=True, is_dir=True)
+        settings.paths('d_plots', make_dirs=True, is_dir=True)
+        ##########################################################
+
+        ##########################################################
+        # TODO: Don't set refs here. Find better solution!
+        cur_state.refs = aircraft.refs
+        ##########################################################
+
+        ##########################################################
+        # TODO: Find better solution for pre_panelling() function
+        make_new_subareas = True if i == 0 else False
+        ##########################################################
+
+        lattice = vlm.gen_lattice(aircraft, cur_state, settings, make_new_subareas)
+
+        # ===== VLM =====
+        vlm.calc_downwash(lattice, vlmdata)
+        vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
+        vlm.solver(vlmdata)
+        vlm.calc_results(lattice, cur_state, vlmdata)
+
+        # ===== Create plots and result files =====
+        io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
+        makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
+
+        ###############################################
+        # TODO: Find better solution
+        ###############################################
+        # Save AeroPerformance map results
+        state.results['Fx'].append(vlmdata.forces['x'])
+        state.results['Fy'].append(vlmdata.forces['y'])
+        state.results['Fz'].append(vlmdata.forces['z'])
+        state.results['FD'].append(vlmdata.forces['D'])
+        state.results['FC'].append(vlmdata.forces['C'])
+        state.results['FL'].append(vlmdata.forces['L'])
+        state.results['Mx'].append(vlmdata.forces['l'])
+        state.results['My'].append(vlmdata.forces['m'])
+        state.results['Mz'].append(vlmdata.forces['n'])
+        ####
+        state.results['Cx'].append(vlmdata.coeffs['x'])
+        state.results['Cy'].append(vlmdata.coeffs['y'])
+        state.results['Cz'].append(vlmdata.coeffs['z'])
+        state.results['CD'].append(vlmdata.coeffs['D'])
+        state.results['CC'].append(vlmdata.coeffs['C'])
+        state.results['CL'].append(vlmdata.coeffs['L'])
+        state.results['Cl'].append(vlmdata.coeffs['l'])
+        state.results['Cm'].append(vlmdata.coeffs['m'])
+        state.results['Cn'].append(vlmdata.coeffs['n'])
+        ###############################################
+
+    # ---------- Save aeroperformance map ----------
+    if settings.aircraft_is_cpacs and settings.state_is_cpacs:
+        io.cpacs.results.save_aeroperformance_map(state, settings)
+
+    if settings.settings['save_results']['aeroperformance']:
+        io.native.results.save_aeroperformance_map(state, settings)
+
+    logger.info(f"{__prog_name__} {__version__} terminated")
+
+    # ---------- Return data to caller ----------
+    results = {
+        "lattice": lattice,
+        "vlmdata": vlmdata,
+        "state": state,
+        "settings": settings,
+    }
+    return results
+
+
+def meshing(args):
+    """
+    
+    """
     # Sets logging level for the whole simulation by reading the "args"
     # variable and displays program version.
     settings = get_settings(settings_filepath=args.run)
-    print(settings)
     hlogger.init(settings.paths('f_log'), level=args)
     logger = logging.getLogger(__name__)
     logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
@@ -162,6 +217,7 @@ def standard_run(args):
     vlm.set_autopanels(aircraft, settings)
 
     # ----- Iterate through the flight states -----
+    # TODO
     for i, cur_state in enumerate(state.iter_states()):
 
         settings.paths.counter = i
@@ -183,67 +239,42 @@ def standard_run(args):
                                   cur_state,
                                   settings,
                                   make_new_subareas)
+    
+    return lattice, vlmdata, settings, aircraft, cur_state, state
 
-        # ===== Mesh Deformation =====
-        logger.info(settings.settings["deformation"])
-        if settings.settings["deformation"]:
-            # Deforms the mesh and uploads the deformed one into the code
-            logger.info("===== Mesh deformation function activated =====")
-            mesh_def = io.native.deformation.Mesh_Def(lattice)
-            mesh_def.deformation(settings)
-            lattice.p = mesh_def.f_p
-            lattice.v = mesh_def.f_v  # turns everything down
-            lattice.c = mesh_def.f_c
-            lattice.bound_leg_midpoints = mesh_def.f_b  # turns everything up
-            lattice.n = mesh_def.f_n
-            lattice.a = mesh_def.f_a
-        else:
-            logger.info("===== Mesh deformation function deactivated =====")
-
-        # ===== VLM =====
-        vlm.calc_downwash(lattice, vlmdata)
-        vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
-        vlm.solver(vlmdata)
-        vlm.calc_results(lattice, cur_state, vlmdata)
-
-        # Saves the results for comparison with the debugger.py function
-        # These results are also saved in another format later in the code
-        # TODO delete once the debugging phase is done
-        path = str(settings.project_dir)
-        if settings.settings["save_results"]["panelwise"]:
-            if settings.settings["deformation"]:
-                save_to_pkl(path,lattice,vlmdata,True)
-            else:
-                save_to_pkl(path,lattice,vlmdata,False)
-
-        # ===== Create plots and result files =====
-        io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
-        makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
-
-        ################################################
-        # TODO: Find better solution
-        ################################################
-        # Save AeroPerformance map results
-        state.results['Fx'].append(vlmdata.forces['x'])
-        state.results['Fy'].append(vlmdata.forces['y'])
-        state.results['Fz'].append(vlmdata.forces['z'])
-        state.results['FD'].append(vlmdata.forces['D'])
-        state.results['FC'].append(vlmdata.forces['C'])
-        state.results['FL'].append(vlmdata.forces['L'])
-        state.results['Mx'].append(vlmdata.forces['l'])
-        state.results['My'].append(vlmdata.forces['m'])
-        state.results['Mz'].append(vlmdata.forces['n'])
-        ####
-        state.results['Cx'].append(vlmdata.coeffs['x'])
-        state.results['Cy'].append(vlmdata.coeffs['y'])
-        state.results['Cz'].append(vlmdata.coeffs['z'])
-        state.results['CD'].append(vlmdata.coeffs['D'])
-        state.results['CC'].append(vlmdata.coeffs['C'])
-        state.results['CL'].append(vlmdata.coeffs['L'])
-        state.results['Cl'].append(vlmdata.coeffs['l'])
-        state.results['Cm'].append(vlmdata.coeffs['m'])
-        state.results['Cn'].append(vlmdata.coeffs['n'])
-        ################################################
+def solver(lattice, vlmdata, settings, aircraft, cur_state, state):
+    # ===== VLM =====
+    vlm.calc_downwash(lattice, vlmdata)
+    vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
+    vlm.solver(vlmdata)
+    vlm.calc_results(lattice, cur_state, vlmdata)
+    
+    io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
+    makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
+    ###############################################
+    # TODO: Find better solution
+    ###############################################
+    # Save AeroPerformance map results
+    state.results['Fx'].append(vlmdata.forces['x'])
+    state.results['Fy'].append(vlmdata.forces['y'])
+    state.results['Fz'].append(vlmdata.forces['z'])
+    state.results['FD'].append(vlmdata.forces['D'])
+    state.results['FC'].append(vlmdata.forces['C'])
+    state.results['FL'].append(vlmdata.forces['L'])
+    state.results['Mx'].append(vlmdata.forces['l'])
+    state.results['My'].append(vlmdata.forces['m'])
+    state.results['Mz'].append(vlmdata.forces['n'])
+    ####
+    state.results['Cx'].append(vlmdata.coeffs['x'])
+    state.results['Cy'].append(vlmdata.coeffs['y'])
+    state.results['Cz'].append(vlmdata.coeffs['z'])
+    state.results['CD'].append(vlmdata.coeffs['D'])
+    state.results['CC'].append(vlmdata.coeffs['C'])
+    state.results['CL'].append(vlmdata.coeffs['L'])
+    state.results['Cl'].append(vlmdata.coeffs['l'])
+    state.results['Cm'].append(vlmdata.coeffs['m'])
+    state.results['Cn'].append(vlmdata.coeffs['n'])
+    ###############################################
 
     # ---------- Save aeroperformance map ----------
     if settings.aircraft_is_cpacs and settings.state_is_cpacs:
@@ -262,74 +293,3 @@ def standard_run(args):
         "settings": settings,
     }
     return results
-
-def test():
-    print("STDUN function call")
-
-def meshing(args):
-    """
-        Generates the mesh files
-    """
-    # Sets logging level for the whole simulation by reading the "args"
-    # variable and displays program version.
-    settings = get_settings(settings_filepath=args.run)
-    hlogger.init(settings.paths('f_log'), level=args)
-    logger = logging.getLogger(__name__)
-    logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
-
-    # ===== Setup aircraft model and flight state =====
-    # Chooses where (CPACS of JSON) to read the aircraft information and
-    # assing the values to the aircraft variable.
-    if settings.aircraft_is_cpacs:
-        aircraft = io.cpacs.aircraft.load(settings)
-    else:
-        aircraft = io.native.aircraft.load(settings)
-
-    # Sets state for the simulation (Mach number, altitude, AoA, etc...)
-    if settings.state_is_cpacs:
-        state = io.cpacs.state.load(settings)
-    else:
-        state = io.native.state.load(settings)
-    # ===== Generate lattice =====
-    vlmdata = VLMData()
-    vlm.set_autopanels(aircraft, settings)
-
-    # ----- Iterate through the flight states -----
-    for i, cur_state in enumerate(state.iter_states()):
-
-        settings.paths.counter = i
-
-        # TODO: Temporary workaround!
-        settings.paths('d_results', make_dirs=True, is_dir=True)
-        settings.paths('d_plots', make_dirs=True, is_dir=True)
-
-        # TODO: Don't set refs here. Find better solution!
-        cur_state.refs = aircraft.refs
-        ##########################################################
-
-        ##########################################################
-        # TODO: Find better solution for pre_panelling() function
-        make_new_subareas = True if i == 0 else False
-        ##########################################################
-
-        lattice = vlm.gen_lattice(aircraft,
-                                  cur_state,
-                                  settings,
-                                  make_new_subareas)
-    return lattice, vlmdata, settings, aircraft, cur_state
-
-def solver(lattice, vlmdata, settings, aircraft, cur_state):
-    """
-    Solves mesh
-    """
-    # ===== VLM =====
-    vlm.calc_downwash(lattice, vlmdata)
-    vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
-    vlm.solver(vlmdata)
-    vlm.calc_results(lattice, cur_state, vlmdata)
-    
-    # ===== Create plots and result files =====
-    io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
-    makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
-    
-    return lattice, vlmdata

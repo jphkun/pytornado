@@ -26,9 +26,7 @@ Command line interface
 import argparse
 from pathlib import Path
 import sys
-### TODO Here for testing purposes only
-sys.path.insert(1, '/home/cfse2/Documents/pytornado/src/lib')
-###
+
 from commonlibs.logger.logger import truncate_filepath
 
 from pytornado.__version__ import __version__
@@ -51,17 +49,11 @@ def main():
     parser = argparse.ArgumentParser(prog=f'{stdrun.__prog_name__} {__version__}')
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-r', '--run', metavar='<Settings file>', type=str, 
-                       help=HELP_RUN)
-    group.add_argument('--cpacs2json', metavar='<CPACS file>', type=str, 
-                       help=HELP_CPACS2JSON)
-    group.add_argument('--make-example', action='store_true', 
-                       help=HELP_MAKE_EXAMPLE)
-    group.add_argument('--list-example-from-db', '--ldb', action='store_true', 
-                       help=HELP_LIST_EXAMPLE_FROM_DB)
-    group.add_argument('--make-example-from-db', '--mdb', 
-                       metavar='<Aircraft name>', type=str, 
-                       help=HELP_MAKE_EXAMPLE_FROM_DB)
+    group.add_argument('-r', '--run', metavar='<Settings file>', type=str, help=HELP_RUN)
+    group.add_argument('--cpacs2json', metavar='<CPACS file>', type=str, help=HELP_CPACS2JSON)
+    group.add_argument('--make-example', action='store_true', help=HELP_MAKE_EXAMPLE)
+    group.add_argument('--list-example-from-db', '--ldb', action='store_true', help=HELP_LIST_EXAMPLE_FROM_DB)
+    group.add_argument('--make-example-from-db', '--mdb', metavar='<Aircraft name>', type=str, help=HELP_MAKE_EXAMPLE_FROM_DB)
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-v', '--verbose', action='store_true')
@@ -69,10 +61,8 @@ def main():
     group.add_argument('-q', '--quiet', action='store_true')
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-c", "--clean", help="remove old project files", 
-                       action="store_true")
-    group.add_argument("--clean-only", help="clean and exit", 
-                       action="store_true")
+    group.add_argument("-c", "--clean", help="remove old project files", action="store_true")
+    group.add_argument("--clean-only", help="clean and exit", action="store_true")
     args = parser.parse_args()
 
     if args.clean or args.clean_only:
@@ -99,8 +89,7 @@ def main():
             filepath_aircraft = dbtools.get_aircraft_file_path(aircraft_name)
         except FileNotFoundError:
             dbtools.print_available_aircraft()
-            print(f"\nAircraft '{aircraft_name}' file not found. Exit...", 
-                  file=sys.stderr)
+            print(f"\nAircraft '{aircraft_name}' file not found. Exit...", file=sys.stderr)
             sys.exit(1)
 
         print(f"Aircraft found at '{truncate_filepath(filepath_aircraft)}'...")

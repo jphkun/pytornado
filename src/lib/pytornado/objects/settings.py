@@ -60,7 +60,9 @@ DEFAULT_SETTINGS = {
     'aircraft': (None, str),
     'state': (None, str),
     'deformation': (None, (None, str)),
+    # Needed for Aeroframe_2
     'deformation_function': (None, (None, str)), # TODO Might be temporal
+    # Needed for Aeroframe_2
     'deformation_file': (None, (None, str)),     # TODO Might be temporal
     'vlm_autopanels_c': (4, int),
     'vlm_autopanels_s': (4, int),
@@ -83,7 +85,6 @@ class PATHS:
         AIRCRAFT = 'aircraft'
         AIRFOILS = 'airfoils'
         DEFORMATION = 'deformation'
-        DEFORMATION_FILE = 'deformation_file'
         SETTINGS = 'settings'
         STATE = 'state'
         # ----- Output directories -----
@@ -169,7 +170,9 @@ class Settings:
         self.paths.add_path(uid='d_aircraft', path=PATHS.DIR.AIRCRAFT, uid_groups='dir')
         self.paths.add_path(uid='d_airfoils', path=PATHS.DIR.AIRFOILS, uid_groups='dir')
         self.paths.add_path(uid='d_deformation', path=PATHS.DIR.DEFORMATION, uid_groups='dir')
+        # Needed for Aeroframe_2
         self.paths.add_path(uid='d_deformation_file', path=PATHS.DIR.DEFORMATION, uid_groups='dir') # TODO might be temporary
+        #
         self.paths.add_path(uid='d_settings', path=PATHS.DIR.SETTINGS, uid_groups='dir')
         self.paths.add_path(uid='d_state', path=PATHS.DIR.STATE, uid_groups='dir')
         # Output directories
@@ -182,7 +185,9 @@ class Settings:
         self.paths.add_path(uid='f_log', path=PATHS.FILES.LOG)
         self.paths.add_subpath(uid_parent='d_aircraft', uid='f_aircraft', path=f"{self.settings['aircraft']}")
         self.paths.add_subpath(uid_parent='d_deformation', uid='f_deformation', path=f"{self.settings['deformation']}")
+        # Need for Aeroframe_2
         self.paths.add_subpath(uid_parent='d_deformation_file', uid='f_deformation_file', path=f"{self.settings['deformation_file']}") # TODO might be temporary
+        #
         self.paths.add_subpath(uid_parent='d_settings', uid='f_settings', path=f"{self.project_basename}.json")
         self.paths.add_subpath(uid_parent='d_state', uid='f_state', path=f"{self.settings['state']}")
         # Output files

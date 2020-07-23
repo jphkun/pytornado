@@ -52,12 +52,7 @@ import os
 import numpy as np
 from commonlibs.math.vectors import get_plane_line_intersect
 from airfoils import Airfoil, MorphAirfoil
-### TODO delete once debugging phase is done
-# import sys
-# insert at 1, 0 is the script path (or '' in REPL)
-# sys.path.insert(1, '/home/cfse2/Documents/pytornado/src/lib/pytornado/objects/airfoils')
-###
-from pytornado.objects._airfoils.fileio import import_airfoil_data
+from airfoils.fileio import import_airfoil_data
 from aeroframe.interpol.translate import get_deformed_point
 from schemadict import schemadict
 
