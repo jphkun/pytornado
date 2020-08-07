@@ -37,6 +37,7 @@ from pytornado.objects.vlm_struct import VLMData
 import pytornado.aero.vlm as vlm
 import pytornado.fileio as io
 import pytornado.plot.makeplots as makeplots
+import sys
 
 logger = logging.getLogger(__name__)
 __prog_name__ = 'pytornado'
@@ -183,13 +184,13 @@ def standard_run(args):
     return results
 
 
-def meshing(args):
+def meshing(args,settings_filepath):
     """
     
     """
     # Sets logging level for the whole simulation by reading the "args"
-    # variable and displays program version.
-    settings = get_settings(settings_filepath=args.run)
+    # variable and displays program version
+    settings = get_settings(settings_filepath)
     hlogger.init(settings.paths('f_log'), level=args)
     logger = logging.getLogger(__name__)
     logger.info(hlogger.decorate(f"{__prog_name__} {__version__}"))
@@ -239,7 +240,7 @@ def meshing(args):
                                   cur_state,
                                   settings,
                                   make_new_subareas)
-    
+
     return lattice, vlmdata, settings, aircraft, cur_state, state
 
 def solver(lattice, vlmdata, settings, aircraft, cur_state, state):
@@ -248,6 +249,9 @@ def solver(lattice, vlmdata, settings, aircraft, cur_state, state):
     vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
     vlm.solver(vlmdata)
     vlm.calc_results(lattice, cur_state, vlmdata)
+    
+    # logger.debug(lattice.bookkeeping_by_wing_uid)
+    # sys.exit()
     
     io.native.results.save_all(settings, aircraft, cur_state, vlmdata)
     makeplots.make_all(settings, aircraft, cur_state, vlmdata, lattice)
