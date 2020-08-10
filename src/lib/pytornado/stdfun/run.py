@@ -186,7 +186,7 @@ def standard_run(args):
 
 def meshing(args,settings_filepath):
     """
-    
+    Meshes the VLM problem
     """
     # Sets logging level for the whole simulation by reading the "args"
     # variable and displays program version
@@ -240,10 +240,20 @@ def meshing(args,settings_filepath):
                                   cur_state,
                                   settings,
                                   make_new_subareas)
+    pytornadoVariables = [lattice, vlmdata, settings, aircraft, cur_state, state]
+    return pytornadoVariables
 
-    return lattice, vlmdata, settings, aircraft, cur_state, state
-
-def solver(lattice, vlmdata, settings, aircraft, cur_state, state):
+def solver(pytornadoVariables):
+    """
+    Solves the VLM problem to get the aerodynamic forces
+    """
+    lattice = pytornadoVariables[0]
+    vlmdata = pytornadoVariables[1]
+    settings = pytornadoVariables[2]
+    aircraft = pytornadoVariables[3]
+    cur_state = pytornadoVariables[4]
+    state = pytornadoVariables[5]
+    
     # ===== VLM =====
     vlm.calc_downwash(lattice, vlmdata)
     vlm.calc_boundary(lattice, cur_state, vlmdata)  # right-hand side terms
@@ -290,10 +300,16 @@ def solver(lattice, vlmdata, settings, aircraft, cur_state, state):
     logger.info(f"{__prog_name__} {__version__} terminated")
 
     # ---------- Return data to caller ----------
-    results = {
-        "lattice": lattice,
-        "vlmdata": vlmdata,
-        "state": state,
-        "settings": settings,
-    }
-    return results
+    # results = {
+    #     "lattice": lattice,
+    #     "vlmdata": vlmdata,
+    #     "state": state,
+    #     "settings": settings,
+    # }
+    pytornadoVariables[0] = lattice
+    pytornadoVariables[1] = vlmdata
+    pytornadoVariables[2] = settings
+    pytornadoVariables[3] = aircraft
+    pytornadoVariables[4] = cur_state
+    pytornadoVariables[5] = state
+    return pytornadoVariables
