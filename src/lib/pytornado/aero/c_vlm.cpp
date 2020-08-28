@@ -20,6 +20,7 @@ PYTHON_C++ WRAPPER FOR VORTEX-LATTICE METHOD CODE
 Authors:
 * Alessandro Gastaldi
 * Aaron Dettmann
+* Jean-Philippe Kuntzer
 *******************************************************************************/
 
 /*
@@ -915,6 +916,11 @@ static int get_resultstruct( PyObject* py_data, resultstruct* results )
     PyArrayObject* py_fz = NULL;
     PyArrayObject* py_fmag = NULL;
 
+    PyArrayObject* py_mx = NULL;
+    PyArrayObject* py_my = NULL;
+    PyArrayObject* py_mz = NULL;
+    PyArrayObject* py_mmag = NULL;
+
     PyArrayObject* py_cp = NULL;
 
     py_key = PyUnicode_FromString("gamma");
@@ -1034,6 +1040,64 @@ static int get_resultstruct( PyObject* py_data, resultstruct* results )
     }
     py_fmag = (PyArrayObject*)PyDict_GetItem(py_dict, py_key);
 
+
+
+    py_key = PyUnicode_FromString("mx");
+    if (!PyDict_Contains(py_dict, py_key))
+    {
+        std::cout << "ERROR: no key 'mx' in vlmdata.panelwise" << std::endl;
+        return ERR_KEY;
+    }
+    else if (!PyArray_Check(PyDict_GetItem(py_dict, py_key)))
+    {
+        std::cout << "ERROR: 'mx' in vlmdata.panelwise is not a NUMPY array" << std::endl;
+        return ERR_TYPE;
+    }
+    py_mx = (PyArrayObject*)PyDict_GetItem(py_dict, py_key);
+
+    py_key = PyUnicode_FromString("my");
+    if (!PyDict_Contains(py_dict, py_key))
+    {
+        std::cout << "ERROR: no key 'my' in vlmdata.panelwise" << std::endl;
+        return ERR_KEY;
+    }
+    else if (!PyArray_Check(PyDict_GetItem(py_dict, py_key)))
+    {
+        std::cout << "ERROR: 'my' in vlmdata.panelwise is not a NUMPY array" << std::endl;
+        return ERR_TYPE;
+    }
+    py_my = (PyArrayObject*)PyDict_GetItem(py_dict, py_key);
+
+    py_key = PyUnicode_FromString("mz");
+    if (!PyDict_Contains(py_dict, py_key))
+    {
+        std::cout << "ERROR: no key 'mz' in vlmdata.panelwise" << std::endl;
+        return ERR_KEY;
+    }
+    else if (!PyArray_Check(PyDict_GetItem(py_dict, py_key)))
+    {
+        std::cout << "ERROR: 'mz' in vlmdata.panelwise is not a NUMPY array" << std::endl;
+        return ERR_TYPE;
+    }
+    py_mz = (PyArrayObject*)PyDict_GetItem(py_dict, py_key);
+
+    py_key = PyUnicode_FromString("mmag");
+    if (!PyDict_Contains(py_dict, py_key))
+    {
+        std::cout << "ERROR: no key 'mmag' in vlmdata.panelwise" << std::endl;
+        return ERR_KEY;
+    }
+    else if (!PyArray_Check(PyDict_GetItem(py_dict, py_key)))
+    {
+        std::cout << "ERROR: 'mmag' in vlmdata.panelwise is not a NUMPY array" << std::endl;
+        return ERR_TYPE;
+    }
+    py_mmag = (PyArrayObject*)PyDict_GetItem(py_dict, py_key);
+
+
+
+
+
     py_key = PyUnicode_FromString("cp");
     if (!PyDict_Contains(py_dict, py_key))
     {
@@ -1119,7 +1183,38 @@ static int get_resultstruct( PyObject* py_data, resultstruct* results )
         std::cout << "ERROR: 'fmag' in vlmresults.panelwise must have FLOAT results type" << std::endl;
         return ERR_TYPE;
     }
-    results->fpan_mag = (double*)PyArray_DATA(py_fmag);
+    results->fpan_mag = (double*)PyArray_DATA(py_fmag);    // Get pointer to contiguous DATA block of NUMPY array
+
+    if (!PyArray_ISFLOAT(py_mx))
+    {
+        std::cout << "ERROR: 'mx' in vlmresults.panelwise must have FLOAT results type" << std::endl;
+        return ERR_TYPE;
+    }
+    results->mpan_x = (double*)PyArray_DATA(py_mx);
+
+    // Get pointer to contiguous DATA block of NUMPY array
+    if (!PyArray_ISFLOAT(py_my))
+    {
+        std::cout << "ERROR: 'my' in vlmresults.panelwise must have FLOAT results type" << std::endl;
+        return ERR_TYPE;
+    }
+    results->mpan_y = (double*)PyArray_DATA(py_my);
+
+    // Get pointer to contiguous DATA block of NUMPY array
+    if (!PyArray_ISFLOAT(py_mz))
+    {
+        std::cout << "ERROR: 'mz' in vlmresults.panelwise must have FLOAT results type" << std::endl;
+        return ERR_TYPE;
+    }
+    results->mpan_z = (double*)PyArray_DATA(py_mz);
+
+    // Get pointer to contiguous DATA block of NUMPY array
+    if (!PyArray_ISFLOAT(py_mmag))
+    {
+        std::cout << "ERROR: 'mmag' in vlmresults.panelwise must have FLOAT results type" << std::endl;
+        return ERR_TYPE;
+    }
+    results->mpan_mag = (double*)PyArray_DATA(py_mmag);
 
     // Get pointer to contiguous DATA block of NUMPY array
     if (!PyArray_ISFLOAT(py_cp))

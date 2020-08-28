@@ -111,6 +111,10 @@ def _save_panelwise(state, vlmdata, settings):
         ('fy', 'N'),
         ('fz', 'N'),
         ('fmag', 'N'),
+        ('mx', 'Nm'),
+        ('my', 'Nm'),
+        ('mz', 'Nm'),
+        ('fmag', 'Nm'),
         ('cp', '1'),
     ]
 

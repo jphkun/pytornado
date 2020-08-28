@@ -171,14 +171,21 @@ void vlm_results(latticestruct* lattice, statestruct* state,
 
         // ===== AERODYNAMIC MOMENTS =====
         // Moments are computed with respect to a given reference point (can be different to CG)
-        arm_x = P_x - refs->RP[0];
-        arm_y = P_y - refs->RP[1];
-        arm_z = P_z - refs->RP[2];
+        arm_x = lattice->BoundLegMidpoint[index_i    ] - refs->RP[0];
+        arm_y = lattice->BoundLegMidpoint[index_i + 1] - refs->RP[1];
+        arm_z = lattice->BoundLegMidpoint[index_i + 2] - refs->RP[2];
 
         // Aerodynamic moments on panel i
         double m_x = arm_y*f_z - arm_z*f_y;
         double m_y = arm_z*f_x - arm_x*f_z;
         double m_z = arm_x*f_y - arm_y*f_x;
+
+        // Save panel moements
+        /**/
+        results->mpan_x[i] = m_x;
+        results->mpan_y[i] = m_y;
+        results->mpan_z[i] = m_z;
+        results->mpan_mag[i] = sqrt(m_x*m_x + m_y*m_y + m_z*m_z);
 
         // Collect contribution of panel i to total moments
         results->mtot_x += m_x;

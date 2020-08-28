@@ -151,6 +151,10 @@ class VLMData:
         self.panelwise['fy'] = None
         self.panelwise['fz'] = None
         self.panelwise['fmag'] = None
+        self.panelwise['mx'] = None
+        self.panelwise['my'] = None
+        self.panelwise['mz'] = None
+        self.panelwise['mmag'] = None
         self.panelwise['cp'] = None
 
         self.stripwise = {}

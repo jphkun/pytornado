@@ -20,6 +20,7 @@ HEADER FILE FOR VORTEX-LATTICE METHOD CODE
 Authors:
 * Alessandro Gastaldi
 * Aaron Dettmann
+* Jean-Philippe Kuntzer
 *******************************************************************************/
 
 /*
@@ -118,6 +119,11 @@ typedef struct resultstruct
     double* fpan_y;    // (num_pan * 1) 1D array of panel y-forces
     double* fpan_z;    // (num_pan * 1) 1D array of panel z-forces
     double* fpan_mag;  // (num_pan * 1) 1D array of panel force magnitudes
+
+    double* mpan_x;    // (num_pan * 1) 1D array of panel x-moments
+    double* mpan_y;    // (num_pan * 1) 1D array of panel y-moments
+    double* mpan_z;    // (num_pan * 1) 1D array of panel z-moments
+    double* mpan_mag;  // (num_pan * 1) 1D array of panel moments magnitudes
 
     double* cp;        // (num_pan * 1) 1D array of panel pressure coefficients
 

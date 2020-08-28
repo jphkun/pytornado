@@ -40,6 +40,7 @@ import pytornado.aero.c_vlm as c_vlm
 import pytornado.objects.objecttools as ot
 from pytornado.objects.vlm_struct import BookKeepingEntry
 from pytornado.objects.aircraft import get_abs_segment_point_coords
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -499,8 +500,9 @@ def calc_results(lattice, state, vlmdata):
     num_p = lattice.info['num_panels']
 
     # Allocate memory for panelwise results
-    for key in ['vx', 'vy', 'vz', 'vmag',  'fx', 'fy', 'fz', 'fmag', 'cp']:
+    for key in ['vx', 'vy', 'vz', 'vmag',  'fx', 'fy', 'fz', 'fmag', 'mx', 'my', 'mz', 'mmag', 'cp']:
         vlmdata.panelwise[key] = np.zeros((num_p), dtype=float, order='C')
+    vlmdata.panelwise['fy']
 
     logger.info("Computing results...")
     c_vlm.py2c_results(lattice, state, vlmdata)
