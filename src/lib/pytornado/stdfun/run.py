@@ -300,16 +300,16 @@ def solver(pytornadoVariables):
     logger.info(f"{__prog_name__} {__version__} terminated")
 
     # ---------- Return data to caller ----------
-    # results = {
-    #     "lattice": lattice,
-    #     "vlmdata": vlmdata,
-    #     "state": state,
-    #     "settings": settings,
-    # }
+    results = {
+        "lattice": lattice,
+        "vlmdata": vlmdata,
+        "state": state,
+        "settings": settings,
+    }
     pytornadoVariables[0] = lattice
     pytornadoVariables[1] = vlmdata
     pytornadoVariables[2] = settings
     pytornadoVariables[3] = aircraft
     pytornadoVariables[4] = cur_state
     pytornadoVariables[5] = state
-    return pytornadoVariables
+    return pytornadoVariables, results
